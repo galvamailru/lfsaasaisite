@@ -1,0 +1,13 @@
+__pycache__
+*.py[cod]
+*$py.class
+.git
+.gitignore
+.env
+.venv
+venv
+*.md
+.pytest_cache
+.coverage
+htmlcov
+*.log

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Подтверждение email</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --danger: #f85149;
+      --success: #3fb950;
+    }
+    html { height: 100%; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(88,166,255,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .auth-card h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .auth-card #status {
+      font-size: 0.95rem;
+      margin: 0 0 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+    }
+    .auth-card #status.success {
+      color: var(--success);
+      background: rgba(63,185,80,0.1);
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+    .auth-card #status.error {
+      color: var(--danger);
+      background: rgba(248,81,73,0.1);
+      border: 1px solid rgba(248,81,73,0.3);
+    }
+    .auth-card #link {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .auth-card #link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .auth-card #link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <h1>Подтверждение email</h1>
+    <p id="status">Проверка ссылки...</p>
+    <p id="link"></p>
+  </div>
+  <script>
+    (function () {
+      const path = window.location.pathname;
+      const slug = path.match(/^\/([^/]+)\/confirm\/?$/)?.[1];
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const status = document.getElementById('status');
+      const linkEl = document.getElementById('link');
+
+      if (!slug || !token) {
+        status.textContent = 'Неверная ссылка: отсутствует tenant или token.';
+        status.className = 'error';
+        return;
+      }
+
+      (async () => {
+        try {
+          const r = await fetch('/api/v1/tenants/by-slug/' + encodeURIComponent(slug) + '/confirm?token=' + encodeURIComponent(token));
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            status.textContent = data.detail || r.statusText || 'Ссылка недействительна или истекла.';
+            status.className = 'error';
+            linkEl.innerHTML = '<a href="/' + slug + '/register">Зарегистрироваться снова</a>';
+            return;
+          }
+          status.textContent = data.message || 'Email подтверждён. Теперь вы можете войти.';
+          status.className = 'success';
+          linkEl.innerHTML = '<a href="/' + slug + '/login">Войти</a>';
+        } catch (err) {
+          status.textContent = err.message || 'Ошибка';
+          status.className = 'error';
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>

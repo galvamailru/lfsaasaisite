@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --danger: #f85149;
+    }
+    html { height: 100%; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(88,166,255,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .auth-card h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .auth-card #err {
+      display: none;
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      padding: 0.6rem 0.75rem;
+      background: rgba(248,81,73,0.1);
+      border: 1px solid rgba(248,81,73,0.3);
+      border-radius: 8px;
+    }
+    .auth-card label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      font-size: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      margin-bottom: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .auth-card input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(88,166,255,0.2);
+    }
+    .auth-card input::placeholder {
+      color: var(--text-muted);
+    }
+    .auth-card button[type="submit"] {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, filter 0.2s;
+    }
+    .auth-card button[type="submit"]:hover {
+      background: #4c9aed;
+      filter: brightness(1.05);
+    }
+    .auth-card .links {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .auth-card .links a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .auth-card .links a:hover {
+      text-decoration: underline;
+    }
+    .auth-card .links p {
+      margin: 0.5rem 0 0;
+    }
+    .auth-card .links p:first-of-type { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <h1>Вход</h1>
+    <p id="err" class="error"></p>
+    <form id="form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required autocomplete="email" placeholder="you@example.com">
+      <label for="password">Пароль</label>
+      <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+      <button type="submit">Войти</button>
+    </form>
+    <div class="links">
+      <p><a href="/register">Создать свой аккаунт</a></p>
+      <p><a href="#" id="forgotLink">Забыли пароль?</a></p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const path = window.location.pathname.replace(/\/$/, '');
+      const slugFromPath = path.match(/^\/([^/]+)\/login\/?$/)?.[1];
+      const isStandaloneLogin = path === '/login';
+      const slug = slugFromPath || null;
+
+      if (!slug && !isStandaloneLogin) {
+        document.getElementById('err').textContent = 'Неверный URL. Ожидается /login или /{tenant_slug}/login';
+        document.getElementById('err').style.display = 'block';
+        return;
+      }
+      if (slug) {
+        document.getElementById('forgotLink').href = '/' + slug + '/forgot-password';
+      } else {
+        document.getElementById('forgotLink').href = '#';
+        document.getElementById('forgotLink').title = 'Восстановление пароля: перейдите по ссылке из письма или откройте /ваш-slug/forgot-password';
+      }
+
+      let tenantId = null;
+      async function ensureTenant() {
+        if (tenantId) return;
+        if (!slug) return;
+        const r = await fetch('/api/v1/tenants/by-slug/' + encodeURIComponent(slug));
+        if (!r.ok) throw new Error('Тенант не найден');
+        const t = await r.json();
+        tenantId = t.id;
+      }
+
+      document.getElementById('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        document.getElementById('err').style.display = 'none';
+        try {
+          if (isStandaloneLogin) {
+            const r = await fetch('/api/v1/tenants/login-by-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+              document.getElementById('err').textContent = data.detail || r.statusText || 'Ошибка';
+              document.getElementById('err').style.display = 'block';
+              return;
+            }
+            localStorage.setItem('cip_user_id', data.user_id);
+            localStorage.setItem('cip_access_token', data.access_token);
+            localStorage.setItem('cip_tenant_id', data.tenant_id);
+            const targetSlug = data.tenant_slug || data.tenant_id;
+            window.location.href = '/' + targetSlug + '/my';
+            return;
+          }
+          await ensureTenant();
+          const r = await fetch('/api/v1/tenants/' + tenantId + '/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            document.getElementById('err').textContent = data.detail || r.statusText || 'Ошибка';
+            document.getElementById('err').style.display = 'block';
+            return;
+          }
+          localStorage.setItem('cip_user_id', data.user_id);
+          localStorage.setItem('cip_access_token', data.access_token);
+          localStorage.setItem('cip_tenant_id', data.tenant_id);
+          const targetSlug = data.tenant_slug || slug;
+          window.location.href = '/' + targetSlug + '/my';
+        } catch (err) {
+          document.getElementById('err').textContent = err.message || 'Ошибка';
+          document.getElementById('err').style.display = 'block';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

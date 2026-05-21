@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кабинет</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #388bfd;
+      --success: #3fb950;
+      --danger: #f85149;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding: 0; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(88,166,255,0.03) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+    #content { position: relative; z-index: 1; padding: 1.25rem 1.5rem; max-width: 960px; margin: 0 auto; }
+    nav {
+      background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; margin-bottom: 0;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    }
+    nav a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    nav a:hover { color: var(--accent); background: rgba(88,166,255,0.08); }
+    #authLinks { margin-left: auto; }
+    #authLinks a { color: var(--text-muted); }
+    .list { list-style: none; padding: 0; }
+    .list li { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .list li a { text-decoration: none; color: var(--accent); }
+    .list li a:hover { text-decoration: underline; }
+    .error { color: var(--danger); }
+    .hint { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .hint a { color: var(--accent); }
+    .hint code { font-family: var(--font-mono); font-size: 0.8em; background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; }
+    h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.75rem; color: var(--text); }
+    h3 { font-size: 1.05rem; color: var(--text-muted); margin: 1rem 0 0.5rem; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .profile-form .form-row { margin-bottom: 1rem; }
+    .profile-form .form-row:last-of-type { margin-bottom: 0; }
+    .profile-form label { display: block; font-weight: 600; margin-bottom: 0.35rem; color: var(--text); font-size: 0.9rem; }
+    .profile-form input[type="text"] { display: block; width: 100%; max-width: 400px; padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.9rem; box-sizing: border-box; }
+    .profile-form .profile-user-id { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .profile-form .theme-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
+    .profile-form .theme-option { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 8px; border: 2px solid var(--border); background: var(--bg); cursor: pointer; font-size: 0.85rem; }
+    .profile-form .theme-option:hover { border-color: var(--accent); }
+    .profile-form .theme-option.selected { border-color: var(--accent); background: rgba(88,166,255,0.1); }
+    .profile-form .theme-option .swatch { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+    .profile-form .quick-buttons-list { list-style: none; padding: 0; margin: 0.35rem 0 0; }
+    .profile-form .quick-buttons-list li { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .profile-form .quick-buttons-list li input { flex: 1; max-width: 320px; }
+    .profile-form .quick-buttons-list .btn-remove { padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; }
+    .profile-form .quick-buttons-list .btn-remove:hover { color: #c0392b; border-color: #c0392b; }
+    .profile-form .btn-add-quick { margin-top: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+    .profile-form .btn-add-quick:hover { border-color: var(--accent); color: var(--accent); }
+    .profile-form .profile-telegram-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .profile-form .profile-telegram-url-input { flex: 1; min-width: 200px; max-width: 100%; }
+    .profile-form .btn-copy-telegram { padding: 0.5rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
+    .profile-form .btn-copy-telegram:hover { border-color: var(--accent); color: var(--accent); }
+    .chunk-card, .dialog-card, .leads-list .lead-item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; }
+    .chunk-question-label { font-size: 0.75rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; font-family: var(--font-mono); }
+    .chunk-card .chunk-question-input, .chunk-card textarea, .admin-prompt-system textarea {
+      width: 100%; display: block; font-size: 0.9rem; padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); resize: vertical; margin-bottom: 0.5rem;
+    }
+    .chunk-card textarea.chunk-content { min-height: 80px; }
+    .chunk-card .chunk-question-input:focus, .chunk-card textarea:focus, .admin-prompt-system textarea:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,0.2);
+    }
+    .chunk-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: var(--font-mono); }
+    .chunk-actions { margin-top: 0.6rem; }
+    .chunk-actions button, .embed-actions button, .date-filter button {
+      margin-right: 0.5rem; padding: 0.45rem 0.9rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); cursor: pointer; font-size: 0.875rem; transition: background 0.15s, border-color 0.15s;
+    }
+    .chunk-actions button:hover, .embed-actions button:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .add-chunk-box { margin-top: 1rem; padding: 1.25rem; border: 1px dashed var(--border); border-radius: 8px; background: rgba(88,166,255,0.04); }
+    .add-chunk-box p { margin: 0 0 0.75rem 0; }
+    .add-chunk-box input[type="text"], .add-chunk-box textarea { width: 100%; display: block; margin-bottom: 0.5rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.5rem 0.65rem; font-size: 0.9rem; box-sizing: border-box; }
+    .add-chunk-box textarea { min-height: 100px; max-height: 200px; resize: vertical; }
+    .add-chunk-box .counter { font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.5rem; }
+    .embed-code { font-family: var(--font-mono); font-size: 0.8rem; background: #0d1117; color: #7ee787; padding: 1rem; border-radius: 6px; border: 1px solid var(--border); overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    .embed-actions { margin-top: 0.75rem; }
+    .embed-actions button { background: var(--success); border-color: var(--success); color: #fff; }
+    .embed-actions button:hover { filter: brightness(1.1); }
+    .main-page-wrap { display: flex; gap: 1.5rem; align-items: stretch; margin-top: 0.75rem; flex-wrap: wrap; }
+    .main-page-chat { flex: 1 1 360px; min-width: 280px; }
+    .main-page-chat .chat-frame { width: 100%; height: 520px; min-height: 400px; border: 1px solid var(--border); border-radius: 8px; display: block; background: var(--surface); }
+    .main-page-embed { flex: 1 1 360px; min-width: 280px; max-width: 520px; }
+    .main-page-embed .embed-code { max-height: 280px; overflow-y: auto; }
+    @media (max-width: 720px) { .main-page-wrap { flex-direction: column; } .main-page-embed { max-width: none; } }
+    .admin-chat-toggler {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000; padding: 10px 18px; border: 1px solid var(--accent); border-radius: 8px;
+      background: rgba(88,166,255,0.12); color: var(--accent); font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3); transition: background 0.2s, box-shadow 0.2s;
+    }
+    .admin-chat-toggler:hover { background: var(--accent); color: #fff; box-shadow: 0 4px 20px rgba(88,166,255,0.35); }
+    .admin-chat-toggler-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: calc(100vw - 48px); }
+    .admin-chat-popup .chat-msg.assistant .admin-chat-unresolved-count { color: #e74c3c; font-weight: 700; }
+    .admin-chat-popup {
+      position: fixed; right: 24px; bottom: 96px; width: 800px; max-width: calc(100vw - 48px); height: 720px; max-height: 85vh; z-index: 1001;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; overflow: hidden;
+    }
+    body.show-admin-chat .admin-chat-popup { display: flex; }
+    .admin-chat-popup-header { padding: 10px 14px; background: var(--bg); border-bottom: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+    .admin-chat-popup-header .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .admin-chat-popup-header .close-btn:hover { color: var(--text); }
+    .admin-chat-popup .chat-log { flex: 1; min-height: 280px; max-height: 600px; background: var(--bg); padding: 0.75rem; overflow-y: auto; }
+    .admin-chat-popup .chat-msg.loading { color: var(--text-muted); font-style: italic; }
+    .admin-chat-popup .chat-msg.loading::after { content: '...'; animation: adminChatDots 1s steps(4, end) infinite; }
+    .admin-chat-popup .chat-msg.saved-notice { background: rgba(63,185,80,0.2); border: 1px solid var(--success); border-radius: 6px; padding: 0.5rem 0.75rem; color: var(--success); font-weight: 600; }
+    @keyframes adminChatDots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+    .admin-chat-popup .chat-input { margin: 0; padding: 8px; border-top: 1px solid var(--border); background: var(--surface); }
+    .admin-chat-popup .chat-input textarea { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+    .chat-log { max-height: 400px; overflow-y: auto; border: 1px solid var(--border); padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg); border-radius: 6px; }
+    .chat-msg { margin: 0.5rem 0; font-size: 0.9rem; }
+    .chat-msg.user { color: var(--accent); }
+    .chat-msg.assistant { color: var(--text-muted); }
+    /* Страница «Диалог» (/my/dialogs/:id): текст сообщений — контраст AAA (вместо #333) */
+    #content .list .chat-msg,
+    #content .list .dialog-msg-body { color: var(--text); }
+    #content .list .chat-msg.user { color: var(--accent); }
+    .chat-input { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .chat-input textarea { flex: 1; min-height: 60px; resize: vertical; }
+    .date-filter { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+    .date-filter label { font-size: 0.875rem; color: var(--text-muted); }
+    .date-filter input[type="date"] { padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; color: var(--text); }
+    .date-filter button { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .date-filter button:hover { filter: brightness(1.1); }
+    .dialog-cards { display: grid; gap: 0.75rem; }
+    .dialog-card { cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .dialog-card:hover { border-color: var(--accent); background: rgba(88,166,255,0.06); }
+    .dialog-card.has-lead { border-left: 3px solid var(--success); background: rgba(63,185,80,0.08); }
+    .dialog-card.viewed { border-color: #d4a017; background: rgba(212,160,23,0.08); }
+    .dialog-card.viewed:hover { border-color: var(--accent); background: rgba(88,166,255,0.06); }
+    .dialog-card.archived { border-color: var(--danger); background: rgba(248,81,73,0.08); }
+    .dialog-card.archived:hover { border-color: var(--accent); background: rgba(88,166,255,0.06); }
+    .dialog-card .dialog-meta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin-bottom: 0.35rem; font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); }
+    .dialog-card .dialog-meta .date { font-weight: 600; color: var(--text); }
+    .dialog-card .dialog-meta .msg-count { color: var(--accent); }
+    .dialog-card .dialog-meta .lead-badge { color: var(--success); font-weight: 600; }
+    .dialog-card .dialog-meta .viewed-badge { color: var(--text-muted); font-style: italic; }
+    .dialog-detail-actions .dialog-action-btn { margin-right: 0.5rem; }
+    .dialog-detail-actions .dialog-action-btn.delete { border-color: rgba(248,81,73,0.6); color: var(--danger); }
+    .dialog-detail-actions .dialog-action-btn.delete:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .dialog-card .dialog-meta .user-id { font-weight: normal; color: var(--text-muted); font-size: 0.8rem; }
+    .leads-list .lead-item { border-radius: 6px; }
+    .leads-list .lead-item .contact { font-weight: 600; font-size: 1rem; color: var(--text); }
+    .leads-list .lead-item .meta { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; }
+    .leads-list .lead-item .lead-date { font-weight: 500; color: var(--accent); margin-top: 0.25rem; font-family: var(--font-mono); }
+    .admin-prompt-system { margin-bottom: 1.5rem; }
+    .admin-prompt-system.welcome-block { margin-bottom: 1rem; }
+    .admin-prompt-system.welcome-block textarea { min-height: 80px; }
+    .admin-prompt-system label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); font-size: 0.9rem; }
+    .admin-prompt-system textarea { min-height: 300px; }
+    .prompt-tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+    .prompt-tabs .prompt-tab { padding: 0.5rem 1rem; font-size: 0.9rem; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--text-muted, #666); }
+    .prompt-tabs .prompt-tab:hover { color: var(--text); background: rgba(88,166,255,0.06); }
+    .prompt-tabs .prompt-tab.active { background: var(--bg); color: var(--accent); font-weight: 600; margin-bottom: -1px; padding-bottom: calc(0.5rem + 1px); }
+    .prompt-tabs .prompt-tab .prompt-tab-hint { font-weight: normal; font-size: 0.75rem; opacity: 0.85; }
+    .prompt-tab-panel { display: none; padding: 1rem 0; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; background: var(--bg); }
+    .prompt-tab-panel.active { display: block; }
+    .prompt-panel-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 0.5rem; padding: 0.6rem 1rem; margin: -1rem 0 1rem 0; border-radius: 6px; font-weight: 600; font-size: 0.95rem; }
+    .prompt-panel-heading.prompt-type-test { background: rgba(88,166,255,0.15); color: #1976d2; border-bottom: 1px solid rgba(88,166,255,0.3); }
+    .prompt-panel-heading.prompt-type-prod { background: rgba(46,125,50,0.15); color: #2e7d32; border-bottom: 1px solid rgba(46,125,50,0.35); }
+    .prompt-panel-heading .prompt-panel-desc { font-weight: normal; font-size: 0.85rem; color: var(--text-muted, #666); margin-left: 0.25rem; }
+    .admin-chunk-card { border: 1px solid var(--border); background: rgba(88,166,255,0.04); }
+    .admin-chunk-card .chunk-question-input { margin-bottom: 0.5rem; }
+    .admin-chunk-card textarea { min-height: 100px; }
+    /* Глобальные формы */
+    #content input:not([type="date"]):not([type="checkbox"]), #content textarea, #content select {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.5rem 0.65rem;
+    }
+    #content button:not(.close-btn) { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.45rem 0.9rem; cursor: pointer; font-size: 0.875rem; }
+    #content button:not(.close-btn):hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #content .date-filter button:not(.reset-btn), #content .chunk-actions button:not(.delete), #content .embed-actions button { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #content .chunk-actions button.delete { border-color: rgba(248,81,73,0.5); color: var(--danger); }
+    #content .chunk-actions button.delete:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+    #content .date-filter .reset-btn { background: var(--surface); color: var(--text-muted); }
+    #content .date-filter .reset-btn:hover { background: var(--border); color: var(--text); }
+    /* Галерея и RAG */
+    .content-loading { color: var(--text-muted); padding: 2rem; text-align: center; }
+    .page-gallery .gallery-create-panel, .page-rag .rag-upload-panel { margin-bottom: 1.5rem; }
+    .page-gallery .gallery-create-panel h3, .page-rag .rag-upload-panel h3 { margin-top: 0; }
+    .page-gallery .gallery-create-panel input, .page-gallery .gallery-create-panel textarea,
+    .page-rag .rag-upload-panel input { display: block; width: 100%; margin-bottom: 0.5rem; }
+    .page-rag .rag-upload-panel input[type="file"] { margin-bottom: 0.5rem; }
+    .gallery-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .gallery-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .gallery-card:hover { border-color: var(--accent); }
+    .gallery-card-thumb { width: 100%; aspect-ratio: 16/10; background: var(--bg); border-radius: 6px; object-fit: cover; }
+    .gallery-card-thumb.empty { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.8rem; }
+    .gallery-card-title { font-weight: 600; color: var(--text); }
+    .gallery-card-meta { font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); }
+    .gallery-card-desc { font-size: 0.875rem; color: var(--text-muted); line-height: 1.4; margin: 0; }
+    .gallery-card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+    .gallery-detail-back { margin-bottom: 1rem; }
+    .gallery-detail-back a { color: var(--accent); text-decoration: none; }
+    .gallery-detail-back a:hover { text-decoration: underline; }
+    .gallery-images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+    .gallery-image-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; }
+    .gallery-image-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+    .gallery-image-item .img-url { font-size: 0.75rem; color: var(--text-muted); padding: 0.35rem 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gallery-image-item .img-remove { position: absolute; top: 4px; right: 4px; padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    .rag-doc-list { list-style: none; padding: 0; margin: 0; }
+    .rag-doc-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.5rem; }
+    .rag-doc-item:hover { border-color: var(--border); }
+    .rag-doc-info { flex: 1; min-width: 0; }
+    .rag-doc-name { font-weight: 600; color: var(--text); }
+    .rag-doc-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; font-family: var(--font-mono); }
+    .rag-doc-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    #content input[type="file"] { font-size: 0.875rem; color: var(--text-muted); }
+    /* Модальное окно предпросмотра Markdown (RAG) */
+    .rag-preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; }
+    .rag-preview-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 12px 48px rgba(0,0,0,0.4); }
+    .rag-preview-modal h3 { margin: 0; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 1.1rem; color: var(--text); }
+    .rag-preview-modal .rag-preview-body { padding: 1rem 1.25rem; overflow: auto; flex: 1; min-height: 0; }
+    .rag-preview-modal .rag-preview-body label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .rag-preview-modal .rag-preview-body input[type="text"] { width: 100%; margin-bottom: 1rem; padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; box-sizing: border-box; }
+    .rag-preview-modal .rag-preview-body textarea { width: 100%; min-height: 280px; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-family: var(--font-mono); font-size: 0.85rem; resize: vertical; box-sizing: border-box; }
+    .rag-preview-modal .rag-preview-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .rag-preview-modal .rag-preview-footer button { padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+    .rag-preview-modal .rag-preview-footer .btn-cancel { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
+    .rag-preview-modal .rag-preview-footer .btn-save { background: var(--success); border: 1px solid var(--success); color: #fff; }
+    .rag-preview-modal .rag-preview-body textarea[readonly] { cursor: default; }
+    /* Индикатор прогресса загрузки */
+    .upload-progress-wrap { margin-top: 0.75rem; display: none; }
+    .upload-progress-wrap.active { display: block; }
+    .upload-progress-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-bottom: 0.35rem; }
+    .upload-progress-bar .fill { height: 100%; background: var(--accent); border-radius: 3px; width: 0%; transition: width 0.2s ease; }
+    .upload-progress-text { font-size: 0.8rem; color: var(--text-muted); }
+    .upload-progress-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: upload-spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes upload-spin { to { transform: rotate(360deg); } }
+    .page-mcp .mcp-form-panel label { display: block; margin-bottom: 0.5rem; }
+    .page-mcp .mcp-form-panel input[type="text"] { width: 100%; max-width: 480px; padding: 0.5rem 0.65rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.9rem; box-sizing: border-box; }
+    .page-mcp .mcp-form-panel input[type="checkbox"] { margin-right: 0.5rem; }
+    .page-mcp .mcp-form-panel button { margin-top: 0.5rem; padding: 0.45rem 0.9rem; border-radius: 6px; border: 1px solid var(--border); background: var(--accent); color: #fff; cursor: pointer; font-size: 0.875rem; }
+    .mcp-server-cards { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.75rem; }
+    .mcp-server-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+    .mcp-server-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+    .mcp-server-name { font-weight: 600; color: var(--text); }
+    .mcp-server-badge.disabled { font-size: 0.75rem; color: var(--text-muted); background: var(--bg); padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .mcp-server-url { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; word-break: break-all; }
+    .mcp-server-tools { font-size: 0.875rem; margin: 0.5rem 0; }
+    .mcp-server-tools ul { margin: 0.35rem 0 0 1rem; padding: 0; }
+    .mcp-server-tools li { margin-bottom: 0.25rem; }
+    .mcp-server-tools code { font-size: 0.8em; background: var(--bg); padding: 0.1rem 0.35rem; border-radius: 4px; }
+    .mcp-server-actions { margin-top: 0.75rem; }
+    .mcp-server-actions button { padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--danger); cursor: pointer; }
+    .mcp-server-actions button:hover { background: rgba(248,81,73,0.15); }
+    .pagination { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+    .pagination button { padding: 0.25rem 0.6rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+    .pagination button[disabled] { opacity: 0.5; cursor: default; }
+    .limits-table-wrap { width: 100%; margin-top: 0.75rem; }
+    .limits-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .limits-table th, .limits-table td { padding: 0.5rem 0.75rem; text-align: left; border: 1px solid var(--border); }
+    .limits-table th { background: var(--surface); font-weight: 600; }
+    .limits-table tbody tr:hover { background: rgba(88,166,255,0.04); }
+    .limits-table tbody tr.row-blocked { background: rgba(200, 60, 60, 0.12); }
+    .limits-table tbody tr.row-blocked:hover { background: rgba(200, 60, 60, 0.18); }
+    .limits-table td.actions-cell { white-space: nowrap; padding: 0.35rem 0.5rem; vertical-align: middle; }
+    .limits-table .actions-btns { display: inline-flex; flex-wrap: nowrap; gap: 0.25rem; align-items: center; }
+    .limits-table .btn-edit-limits, .limits-table .btn-block, .limits-table .btn-open-tenant { padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--accent); cursor: pointer; }
+    .limits-table .btn-edit-limits:hover, .limits-table .btn-open-tenant:hover { background: rgba(88,166,255,0.1); }
+    .limits-table .btn-block:hover { background: rgba(88,166,255,0.1); }
+    .limits-table .btn-block { min-width: 2rem; font-size: 1rem; line-height: 1; }
+    .limits-table .btn-block.btn-blocked { background: #c00; color: #fff; border-color: #a00; }
+    .limits-table .btn-block.btn-blocked:hover { background: #e00; color: #fff; }
+    .users-search-row { margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .users-search-row label { margin: 0; }
+    .users-search-row #usersSearchBtn { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
+    .limits-edit-panel { margin-top: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); display: none; }
+    .limits-edit-panel.visible { display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="#" data-page="my">Главная</a>
+    <a href="#" data-page="dialogs">Диалоги</a>
+    <a href="#" data-page="prompt">Промпт</a>
+    <a href="#" data-page="admin-prompt">Промпт админ-бота</a>
+    <a href="#" data-page="mcp-servers">MCP серверы</a>
+    <a href="#" data-page="users">Пользователи</a>
+    <a href="#" data-page="gallery">Галерея</a>
+    <a href="#" data-page="rag">Документы</a>
+    <a href="#" data-page="leads">Лиды</a>
+    <a href="#" data-page="profile">Профиль</a>
+    <span id="authLinks"></span>
+  </nav>
+  <div id="content"></div>
+  <div class="admin-chat-toggler-wrap">
+    <button type="button" id="adminChatToggler" class="admin-chat-toggler" aria-label="Админ-чат">Админ-чат</button>
+  </div>
+  <div id="adminChatPopup" class="admin-chat-popup">
+    <div class="admin-chat-popup-header">Помощник по промпту <button type="button" class="close-btn" id="adminChatClose" aria-label="Закрыть">×</button></div>
+    <div class="chat-log" id="adminChatLog"></div>
+    <div class="chat-input"><textarea id="adminChatInput" placeholder="Напишите, чем помочь..."></textarea><button type="button" id="adminChatSend">Отправить</button></div>
+  </div>
+  <script>
+    (function () {
+      const path = window.location.pathname;
+      const slugMatch = path.match(/^\/([^/]+)\//);
+      const tenantSlug = slugMatch ? slugMatch[1] : null;
+      if (!tenantSlug) {
+        document.getElementById('content').innerHTML = '<p class="error">Неверный URL. Ожидается /{tenant_slug}/my...</p>';
+        return;
+      }
+
+      // Вход по билету (администратор нажал «Перейти в тенант» на странице Пользователи)
+      const params = new URLSearchParams(window.location.search);
+      const ticket = params.get('ticket');
+      if (ticket) {
+        (async function() {
+          try {
+            const r = await fetch('/api/v1/tenants/by-slug/' + encodeURIComponent(tenantSlug) + '/impersonate-redeem', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticket: ticket })
+            });
+            const data = await r.json().catch(function() { return {}; });
+            if (!r.ok) {
+              alert(data.detail || 'Билет недействителен или истёк');
+              window.history.replaceState({}, '', '/' + tenantSlug + '/my');
+              return;
+            }
+            localStorage.setItem('cip_access_token', data.access_token);
+            localStorage.setItem('cip_user_id', data.user_id);
+            localStorage.setItem('cip_tenant_id', data.tenant_id);
+            window.history.replaceState({}, '', '/' + tenantSlug + '/my');
+            window.location.reload();
+            return;
+          } catch (e) {
+            alert('Ошибка входа: ' + (e.message || e));
+          }
+          window.history.replaceState({}, '', '/' + tenantSlug + '/my');
+        })();
+        return;
+      }
+
+      let tenantId = null;
+      let userId = localStorage.getItem('cip_user_id') || 'anon-' + Math.random().toString(36).slice(2, 12);
+      if (!localStorage.getItem('cip_user_id')) localStorage.setItem('cip_user_id', userId);
+
+      const base = '/api/v1/tenants';
+      const headers = (json) => {
+        const h = { Accept: 'application/json' };
+        const token = localStorage.getItem('cip_access_token');
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        else h['X-User-Id'] = userId;
+        if (json) h['Content-Type'] = 'application/json';
+        return h;
+      };
+
+      function requireAuth() {
+        if (!localStorage.getItem('cip_access_token')) {
+          window.location.href = '/' + tenantSlug + '/login?next=/' + tenantSlug + '/my';
+          return false;
+        }
+        return true;
+      }
+
+      function renderAuthLinks() {
+        const token = localStorage.getItem('cip_access_token');
+        const el = document.getElementById('authLinks');
+        if (token) {
+          el.innerHTML = '<span id="authUserInfo"></span> <a href="#" id="logoutBtn">Выйти</a>';
+          const btn = document.getElementById('logoutBtn');
+          if (btn) btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('cip_access_token');
+            localStorage.removeItem('cip_user_id');
+            localStorage.removeItem('cip_tenant_id');
+            window.location.href = '/login';
+          });
+        } else {
+          el.innerHTML = '<a href="/login">Войти</a> <a href="/register">Создать аккаунт</a>';
+        }
+      }
+
+      async function ensureTenant() {
+        if (tenantId) return;
+        const r = await fetch(base + '/by-slug/' + encodeURIComponent(tenantSlug));
+        if (!r.ok) throw new Error('Тенант не найден');
+        const t = await r.json();
+        tenantId = t.id;
+      }
+
+      let isAdminTenant = false;
+      async function ensureAdminFlag() {
+        const token = localStorage.getItem('cip_access_token');
+        try {
+          if (token) {
+            await ensureTenant();
+            const r = await fetch(base + '/' + tenantId + '/me/is-admin', { headers: headers() });
+            const d = await r.json().catch(function() { return {}; });
+            isAdminTenant = !!d.is_admin;
+            var profileR = await fetch(base + '/' + tenantId + '/me/profile', { headers: headers() });
+            if (profileR.ok) {
+              var profile = await profileR.json().catch(function() { return {}; });
+              var infoEl = document.getElementById('authUserInfo');
+              if (infoEl) {
+                var parts = [];
+                if (profile.role && (profile.role !== 'admin' || isAdminTenant)) parts.push(profile.role);
+                if (profile.display_name) parts.push(profile.display_name);
+                infoEl.textContent = parts.length ? parts.join(' · ') + ' ' : '';
+              }
+            }
+          } else {
+            const r = await fetch(base + '/by-slug/' + encodeURIComponent(tenantSlug) + '/is-admin');
+            const d = await r.json().catch(function() { return {}; });
+            isAdminTenant = !!d.is_admin;
+          }
+        } catch (_) { isAdminTenant = false; }
+        document.querySelectorAll('nav a[data-page="admin-prompt"], nav a[data-page="mcp-servers"], nav a[data-page="users"]').forEach(function(a) {
+          a.style.display = isAdminTenant ? '' : 'none';
+        });
+      }
+
+      function setLinks() {
+        document.querySelectorAll('nav a[data-page]').forEach(a => {
+          const page = a.getAttribute('data-page');
+          a.href = '/' + tenantSlug + (page === 'my' ? '/my' : '/my/' + page);
+        });
+      }
+
+      const DIALOGS_PAGE_SIZE = 20;
+      let dialogsPage = 1;
+      const LEADS_PAGE_SIZE = 20;
+      let leadsPage = 1;
+
+      function formatDate(isoStr) {
+        if (!isoStr) return '—';
+        try {
+          const d = new Date(isoStr);
+          return isNaN(d.getTime()) ? isoStr : d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (_) { return isoStr; }
+      }
+
+      async function loadDialogs(dateFromVal, dateToVal, page, onlyNew, onlyLeads, showArchived) {
+        page = page || 1;
+        dialogsPage = page;
+        if (!requireAuth()) return;
+        await ensureTenant();
+        let offset = (page - 1) * DIALOGS_PAGE_SIZE;
+        let url = base + '/' + tenantId + '/me/tenant/dialogs?limit=' + DIALOGS_PAGE_SIZE + '&offset=' + offset;
+        if (dateFromVal) url += '&date_from=' + encodeURIComponent(dateFromVal);
+        if (dateToVal) url += '&date_to=' + encodeURIComponent(dateToVal);
+        if (onlyNew) url += '&only_new=true';
+        if (onlyLeads) url += '&only_leads=true';
+        if (showArchived) url += '&include_archived=true';
+        const r = await fetch(url, { headers: headers() });
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Ошибка загрузки диалогов. Войдите в кабинет.</p>';
+          return;
+        }
+        const data = await r.json();
+        const items = data.items || [];
+        const total = data.total || 0;
+        const totalPages = Math.max(1, Math.ceil(total / DIALOGS_PAGE_SIZE));
+        let html = '<h2>Диалоги</h2>';
+        html += '<div class="date-filter">';
+        html += '<label>С: <input type="date" id="dialogsDateFrom" value="' + escapeHtml(dateFromVal || '') + '"></label>';
+        html += '<label>По: <input type="date" id="dialogsDateTo" value="' + escapeHtml(dateToVal || '') + '"></label>';
+        html += '<label class="checkbox-label"><input type="checkbox" id="dialogsOnlyNew" ' + (onlyNew ? 'checked' : '') + '> Только новые</label>';
+        html += '<label class="checkbox-label"><input type="checkbox" id="dialogsOnlyLeads" ' + (onlyLeads ? 'checked' : '') + '> Только с лидами</label>';
+        html += '<label class="checkbox-label"><input type="checkbox" id="dialogsShowArchived" ' + (showArchived ? 'checked' : '') + '> Показать архив</label>';
+        html += '<button type="button" id="dialogsFilterBtn">Применить</button>';
+        html += '<button type="button" class="reset-btn" id="dialogsFilterReset">Сбросить</button>';
+        html += '<span class="hint" style="margin-left:0.5rem;">Всего: ' + total + '</span>';
+        html += '</div>';
+        html += '<div class="pagination"><button type="button" id="dialogsPrev">←</button>';
+        html += '<span>Страница ' + dialogsPage + ' из ' + totalPages + '</span>';
+        html += '<button type="button" id="dialogsNext">→</button></div>';
+        if (items.length === 0) {
+          html += '<p class="hint">Нет диалогов за выбранный период. Диалоги посетителей с ботом через iframe появятся здесь.</p>';
+        } else {
+          html += '<div class="dialog-cards">';
+          for (const d of items) {
+            const preview = (d.preview || '').slice(0, 80) + (d.preview && d.preview.length > 80 ? '…' : '');
+            const leadClass = d.has_lead ? ' has-lead' : '';
+            const viewedClass = d.viewed_at ? ' viewed' : '';
+            const archivedClass = d.archived ? ' archived' : '';
+            html += '<div class="dialog-card' + leadClass + viewedClass + archivedClass + '" data-dialog-id="' + escapeHtml(d.id) + '">';
+            html += '<div class="dialog-meta">';
+            html += '<span class="date">' + formatDate(d.updated_at) + '</span>';
+            html += '<span class="msg-count">' + (d.message_count || 0) + ' сообщ.</span>';
+            if (d.has_lead) html += '<span class="lead-badge">✓ Лид</span>';
+            if (d.viewed_at) html += '<span class="viewed-badge">Просмотрено ' + formatDate(d.viewed_at) + '</span>';
+            if (d.archived) html += '<span class="viewed-badge">В архиве</span>';
+            var uid = (d.user_id || '').toString();
+            var uidShort = uid.length > 20 ? uid.slice(0, 18) + '…' : uid;
+            html += '<span class="user-id" title="' + escapeHtml(uid) + '">Посетитель: ' + escapeHtml(uidShort || '—') + '</span>';
+            html += '</div>';
+            html += '</div>';
+          }
+          html += '</div>';
+        }
+        document.getElementById('content').innerHTML = html;
+        document.getElementById('content').querySelectorAll('.dialog-card').forEach(function(el) {
+          el.addEventListener('click', function() {
+            const id = el.getAttribute('data-dialog-id');
+            window.history.pushState({}, '', '/' + tenantSlug + '/my/dialogs/' + id);
+            route();
+          });
+        });
+        var filterBtn = document.getElementById('dialogsFilterBtn');
+        if (filterBtn) filterBtn.addEventListener('click', function() {
+          var from = document.getElementById('dialogsDateFrom').value;
+          var to = document.getElementById('dialogsDateTo').value;
+          var onlyNew = document.getElementById('dialogsOnlyNew') && document.getElementById('dialogsOnlyNew').checked;
+          var onlyLeads = document.getElementById('dialogsOnlyLeads') && document.getElementById('dialogsOnlyLeads').checked;
+          var showArchived = document.getElementById('dialogsShowArchived') && document.getElementById('dialogsShowArchived').checked;
+          loadDialogs(from || undefined, to || undefined, 1, onlyNew, onlyLeads, showArchived);
+        });
+        var resetBtn = document.getElementById('dialogsFilterReset');
+        if (resetBtn) resetBtn.addEventListener('click', function() {
+          document.getElementById('dialogsDateFrom').value = '';
+          document.getElementById('dialogsDateTo').value = '';
+          var onlyNewEl = document.getElementById('dialogsOnlyNew');
+          if (onlyNewEl) onlyNewEl.checked = false;
+          var onlyLeadsEl = document.getElementById('dialogsOnlyLeads');
+          if (onlyLeadsEl) onlyLeadsEl.checked = false;
+          var showArchivedEl = document.getElementById('dialogsShowArchived');
+          if (showArchivedEl) showArchivedEl.checked = false;
+          loadDialogs(undefined, undefined, 1, false, false, false);
+        });
+        var prevBtn = document.getElementById('dialogsPrev');
+        var nextBtn = document.getElementById('dialogsNext');
+        if (prevBtn) {
+          prevBtn.disabled = dialogsPage <= 1;
+          prevBtn.addEventListener('click', function() {
+            if (dialogsPage > 1) {
+              var from = document.getElementById('dialogsDateFrom').value;
+              var to = document.getElementById('dialogsDateTo').value;
+              var onlyNew = document.getElementById('dialogsOnlyNew') && document.getElementById('dialogsOnlyNew').checked;
+              var onlyLeads = document.getElementById('dialogsOnlyLeads') && document.getElementById('dialogsOnlyLeads').checked;
+              var showArchived = document.getElementById('dialogsShowArchived') && document.getElementById('dialogsShowArchived').checked;
+              loadDialogs(from || undefined, to || undefined, dialogsPage - 1, onlyNew, onlyLeads, showArchived);
+            }
+          });
+        }
+        if (nextBtn) {
+          nextBtn.disabled = dialogsPage >= totalPages;
+          nextBtn.addEventListener('click', function() {
+            if (dialogsPage < totalPages) {
+              var from = document.getElementById('dialogsDateFrom').value;
+              var to = document.getElementById('dialogsDateTo').value;
+              var onlyNew = document.getElementById('dialogsOnlyNew') && document.getElementById('dialogsOnlyNew').checked;
+              var onlyLeads = document.getElementById('dialogsOnlyLeads') && document.getElementById('dialogsOnlyLeads').checked;
+              var showArchived = document.getElementById('dialogsShowArchived') && document.getElementById('dialogsShowArchived').checked;
+              loadDialogs(from || undefined, to || undefined, dialogsPage + 1, onlyNew, onlyLeads, showArchived);
+            }
+          });
+        }
+      }
+
+      async function loadDialogDetail(dialogId) {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        const r = await fetch(base + '/' + tenantId + '/me/tenant/dialogs/' + dialogId, { headers: headers() });
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Диалог не найден.</p><p><a href="#" data-goto="dialogs">← Мои диалоги</a></p>';
+          return;
+        }
+        const d = await r.json();
+        let html = '<h2>Диалог</h2><p><a href="#" data-goto="dialogs">← К списку диалогов</a></p>';
+        if (d.archived) html += '<p class="hint">В архиве</p>';
+        html += '<div class="dialog-detail-actions" style="margin-bottom:1rem;">';
+        if (!d.archived) html += '<button type="button" id="dialogArchiveBtn" class="dialog-action-btn">В архив</button>';
+        html += ' <button type="button" id="dialogDeleteBtn" class="dialog-action-btn delete">Удалить диалог</button>';
+        html += '</div><ul class="list">';
+        for (const m of (d.messages || [])) {
+          var content = m.content || '';
+          var displayContent = (m.role === 'assistant') ? content : (content.length > 500 ? content.slice(0, 500) + '…' : content);
+          var bodyHtml = processHtmlBlocksAndText(displayContent) || '—';
+          html += '<li class="chat-msg ' + escapeHtml((m.role || '')) + '"><strong>' + escapeHtml(m.role === 'assistant' ? 'Бот' : (m.role || 'user')) + ':</strong> <span class="dialog-msg-body">' + bodyHtml + '</span></li>';
+        }
+        html += '</ul>';
+        document.getElementById('content').innerHTML = html;
+        var archiveBtn = document.getElementById('dialogArchiveBtn');
+        var deleteBtn = document.getElementById('dialogDeleteBtn');
+        if (archiveBtn) archiveBtn.addEventListener('click', async function() {
+          var res = await fetch(base + '/' + tenantId + '/me/tenant/dialogs/' + dialogId + '/archive', { method: 'PATCH', headers: headers(true) });
+          var j = await res.json().catch(function() { return {}; });
+          if (!res.ok) { alert(j.detail || 'Ошибка'); return; }
+          window.history.pushState({}, '', '/' + tenantSlug + '/my/dialogs'); route();
+        });
+        if (deleteBtn) deleteBtn.addEventListener('click', async function() {
+          if (!confirm('Удалить диалог безвозвратно? Все сообщения будут удалены.')) return;
+          var res = await fetch(base + '/' + tenantId + '/me/tenant/dialogs/' + dialogId, { method: 'DELETE', headers: headers() });
+          var j = await res.json().catch(function() { return {}; });
+          if (!res.ok) { alert(j.detail || 'Ошибка удаления'); return; }
+          window.history.pushState({}, '', '/' + tenantSlug + '/my/dialogs'); route();
+        });
+      }
+
+      async function loadUserPrompt() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        const rPrompt = await fetch(base + '/' + tenantId + '/me/prompt', { headers: headers() });
+        if (!rPrompt.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Ошибка загрузки. Войдите в кабинет.</p>';
+          return;
+        }
+        const data = await rPrompt.json();
+        const testPromptVal = (data && (data.test_system_prompt != null && data.test_system_prompt !== undefined))
+          ? String(data.test_system_prompt)
+          : ((data && (data.system_prompt != null && data.system_prompt !== undefined)) ? String(data.system_prompt) : '');
+        const prodPromptVal = (data && (data.prod_system_prompt != null && data.prod_system_prompt !== undefined))
+          ? String(data.prod_system_prompt)
+          : '';
+        const prevProdPromptVal = (data && (data.prev_prod_system_prompt != null && data.prev_prod_system_prompt !== undefined))
+          ? String(data.prev_prod_system_prompt)
+          : '';
+        const welcomeVal = (data && (data.welcome_message != null && data.welcome_message !== undefined))
+          ? String(data.welcome_message)
+          : '';
+
+        let html = '<h2>Промпт чат-бота</h2>';
+        html += '<div class="admin-prompt-system welcome-block">';
+        html += '<label>Приветствие (показывается при открытии чата)</label>';
+        html += '<textarea id="userWelcomeMessage" placeholder="Например: Привет! Я ИИ Помощник. Чем могу помочь?" rows="3" style="min-height:80px;"></textarea>';
+        html += '<div style="margin-top:0.5rem;"><button type="button" id="saveWelcomeMessage">Сохранить приветствие</button></div>';
+        html += '</div>';
+        html += '<p class="hint">Отдельные промпты для тестового чата (в кабинете) и боевого бота (iframe на сайте).</p>';
+        html += '<div class="prompt-tabs" role="tablist" aria-label="Выбор промпта">';
+        html += '<button type="button" class="prompt-tab active" role="tab" aria-selected="true" data-tab="test" title="Промпт для тестового чата в кабинете">Тестовый <span class="prompt-tab-hint">(кабинет)</span></button>';
+        html += '<button type="button" class="prompt-tab" role="tab" aria-selected="false" data-tab="prod" title="Промпт для чата на сайте и Telegram">Боевой <span class="prompt-tab-hint">(сайт, Telegram)</span></button>';
+        html += '</div>';
+        html += '<div id="promptTabTest" class="prompt-tab-panel active" role="tabpanel">';
+        html += '<div class="prompt-panel-heading prompt-type-test">Вы редактируете: <strong>Тестовый промпт</strong><span class="prompt-panel-desc">— используется в тестовом чате в кабинете (для проверки перед публикацией)</span></div>';
+        html += '<div class="admin-prompt-system"><label>Текст тестового промпта</label>';
+        html += '<textarea id="userTestPrompt" placeholder="Опишите роль агента, бизнес-цель и ключевые правила для тестового чата..."></textarea>';
+        html += '<div style="margin-top:0.5rem;"><button type="button" id="saveTestPrompt">Сохранить тестовый промпт</button> ';
+        html += '<button type="button" id="restoreUserPromptDefault">Загрузить из файла по умолчанию</button></div></div></div>';
+        html += '<div id="promptTabProd" class="prompt-tab-panel" role="tabpanel">';
+        html += '<div class="prompt-panel-heading prompt-type-prod">Вы редактируете: <strong>Боевой промпт</strong><span class="prompt-panel-desc">— используется в чате на вашем сайте (iframe) и в Telegram-боте</span></div>';
+        html += '<div class="admin-prompt-system"><label>Текст боевого промпта</label>';
+        html += '<textarea id="userProdPrompt" placeholder="Промпт боевого чат-бота для клиентов..."></textarea>';
+        html += '<div style="margin-top:0.5rem;"><button type="button" id="saveProdPrompt">Сохранить боевой промпт</button> ';
+        html += '<button type="button" id="copyTestToProd">Скопировать тестовый → боевой (с бэкапом)</button> ';
+        html += '<button type="button" id="rollbackProdPrompt"' + (prevProdPromptVal ? '' : ' disabled') + '>Откатить боевой к предыдущей версии</button></div>';
+        if (prevProdPromptVal) {
+          html += '<p class="hint" style="margin-top:0.5rem;">Есть сохранённая предыдущая версия боевого промпта. Кнопка отката поменяет местами текущий и предыдущий варианты.</p>';
+        }
+        html += '</div></div></div>';
+
+        document.getElementById('content').innerHTML = html;
+
+        (function setPromptValues() {
+          var welcomeEl = document.getElementById('userWelcomeMessage');
+          var testEl = document.getElementById('userTestPrompt');
+          var prodEl = document.getElementById('userProdPrompt');
+          if (welcomeEl) welcomeEl.value = welcomeVal || '';
+          if (testEl) testEl.value = testPromptVal || '';
+          if (prodEl) prodEl.value = prodPromptVal || '';
+        })();
+
+        document.querySelectorAll('.prompt-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            var tabId = this.getAttribute('data-tab');
+            document.querySelectorAll('.prompt-tab').forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+            this.classList.add('active'); this.setAttribute('aria-selected', 'true');
+            document.querySelectorAll('.prompt-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+            var panel = document.getElementById('promptTab' + (tabId === 'test' ? 'Test' : 'Prod'));
+            if (panel) panel.classList.add('active');
+          });
+        });
+
+        document.getElementById('saveWelcomeMessage').addEventListener('click', async () => {
+          const text = document.getElementById('userWelcomeMessage').value;
+          const res = await fetch(base + '/' + tenantId + '/me/prompt/welcome', {
+            method: 'PATCH',
+            headers: headers(true),
+            body: JSON.stringify({ welcome_message: text })
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(j.detail || 'Ошибка сохранения приветствия'); return; }
+          alert('Приветствие сохранено.');
+        });
+
+        document.getElementById('saveTestPrompt').addEventListener('click', async () => {
+          const text = document.getElementById('userTestPrompt').value;
+          const res = await fetch(base + '/' + tenantId + '/me/prompt', {
+            method: 'PATCH',
+            headers: headers(true),
+            body: JSON.stringify({ system_prompt: text })
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(j.detail || 'Ошибка сохранения тестового промпта'); return; }
+          alert('Тестовый промпт сохранён.');
+          resetAdminChat();
+        });
+
+        document.getElementById('saveProdPrompt').addEventListener('click', async () => {
+          const text = document.getElementById('userProdPrompt').value;
+          const res = await fetch(base + '/' + tenantId + '/me/prompt/prod', {
+            method: 'PATCH',
+            headers: headers(true),
+            body: JSON.stringify({ system_prompt: text })
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(j.detail || 'Ошибка сохранения боевого промпта'); return; }
+          alert('Боевой промпт сохранён.');
+          resetAdminChat();
+          loadUserPrompt();
+        });
+
+        document.getElementById('copyTestToProd').addEventListener('click', async () => {
+          if (!confirm('Скопировать тестовый промпт в боевой и сохранить предыдущую версию боевого промпта?')) return;
+          const res = await fetch(base + '/' + tenantId + '/me/prompt/copy-test-to-prod', {
+            method: 'POST',
+            headers: headers(true)
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(j.detail || 'Ошибка копирования промпта'); return; }
+          alert('Тестовый промпт скопирован в боевой. Предыдущая версия сохранена для отката.');
+          resetAdminChat();
+          loadUserPrompt();
+        });
+
+        document.getElementById('rollbackProdPrompt').addEventListener('click', async function() {
+          if (this.disabled) return;
+          if (!confirm('Откатить боевой промпт к предыдущей версии и сохранить текущий как резервный?')) return;
+          const res = await fetch(base + '/' + tenantId + '/me/prompt/rollback-prod', {
+            method: 'POST',
+            headers: headers(true)
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(j.detail || 'Ошибка отката промпта'); return; }
+          alert('Боевой промпт откатан к предыдущей версии.');
+          resetAdminChat();
+          loadUserPrompt();
+        });
+
+        document.getElementById('restoreUserPromptDefault').addEventListener('click', async () => {
+          if (!confirm('Загрузить промпт из файла по умолчанию в тестовый промпт и заменить текущий тестовый?')) return;
+          const rDef = await fetch(base + '/' + tenantId + '/me/prompt/default', { headers: headers() });
+          if (!rDef.ok) { const j = await rDef.json().catch(() => ({})); alert(j.detail || 'Ошибка'); return; }
+          const defData = await rDef.json();
+          document.getElementById('userTestPrompt').value = defData.test_system_prompt || defData.system_prompt || '';
+        });
+      }
+
+      function renderAdminOnlyError(title) {
+        return '<h2>' + escapeHtml(title) + '</h2><div class="panel">' +
+          '<p class="error">Доступ только для администратора.</p>' +
+          '<p class="hint">Чтобы видеть эту страницу, задайте в .env переменную <code>ADMIN_TENANT_SLUG</code> — slug тенанта, от имени которого вы входите.</p></div>';
+      }
+
+      async function loadAdminPrompt() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        const rPrompt = await fetch(base + '/' + tenantId + '/me/admin-prompt', { headers: headers() });
+        if (rPrompt.status === 403) {
+          const data = await rPrompt.json().catch(function() { return {}; });
+          document.getElementById('content').innerHTML = renderAdminOnlyError('Промпт админ-бота');
+          return;
+        }
+        if (!rPrompt.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Ошибка загрузки. Войдите в кабинет.</p>';
+          return;
+        }
+        const promptData = await rPrompt.json();
+        let html = '<h2>Промпт админ-бота</h2>';
+        html += '<p class="hint">Единый системный промпт. Если пусто — используется промпт из файла по умолчанию.</p>';
+        html += '<div class="admin-prompt-system">';
+        html += '<label>Системный промпт</label>';
+        html += '<textarea id="adminSystemPrompt" placeholder="Базовые инструкции для админ-помощника..."></textarea>';
+        html += '<div style="margin-top:0.5rem;"><button type="button" id="saveAdminSystemPrompt">Сохранить</button> ';
+        html += '<button type="button" id="restoreAdminPromptDefault">Восстановить из файла</button></div>';
+        html += '</div>';
+        document.getElementById('content').innerHTML = html;
+        var adminPromptVal = (promptData && (promptData.system_prompt != null && promptData.system_prompt !== undefined)) ? String(promptData.system_prompt) : '';
+        function setAdminPromptValue() {
+          var el = document.getElementById('adminSystemPrompt');
+          if (el) { el.value = adminPromptVal; return; }
+          requestAnimationFrame(setAdminPromptValue);
+        }
+        setAdminPromptValue();
+        setTimeout(function() {
+          var el = document.getElementById('adminSystemPrompt');
+          if (el) el.value = adminPromptVal;
+        }, 100);
+        setTimeout(function() {
+          var el = document.getElementById('adminSystemPrompt');
+          if (el) el.value = adminPromptVal;
+        }, 250);
+
+        document.getElementById('saveAdminSystemPrompt').addEventListener('click', async () => {
+          const text = document.getElementById('adminSystemPrompt').value;
+          const res = await fetch(base + '/' + tenantId + '/me/admin-prompt', {
+            method: 'PATCH',
+            headers: headers(true),
+            body: JSON.stringify({ system_prompt: text })
+          });
+          if (!res.ok) { const j = await res.json().catch(() => ({})); alert(j.detail || 'Ошибка'); return; }
+          alert('Системный промпт сохранён.');
+          resetAdminChat();
+        });
+
+        document.getElementById('restoreAdminPromptDefault').addEventListener('click', async () => {
+          const r = await fetch(base + '/' + tenantId + '/me/admin-prompt/default', { headers: headers() });
+          if (!r.ok) { const j = await r.json().catch(() => ({})); alert(j.detail || 'Ошибка'); return; }
+          const data = await r.json();
+          document.getElementById('adminSystemPrompt').value = data.system_prompt || '';
+        });
+      }
+
+      let adminChatInited = false;
+      const adminChatHistory = [];
+      let adminChatSessionId = null;
+
+      function resetAdminChat() {
+        adminChatInited = false;
+        adminChatSessionId = null;
+        adminChatHistory.length = 0;
+        var log = document.getElementById('adminChatLog');
+        if (log) log.innerHTML = '';
+      }
+
+      function initAdminChatOnce() {
+        if (adminChatInited) return;
+        const log = document.getElementById('adminChatLog');
+        const input = document.getElementById('adminChatInput');
+        const send = document.getElementById('adminChatSend');
+        if (!log || !send) return;
+        function appendAdminMsg(role, text) {
+          const div = document.createElement('div');
+          div.className = 'chat-msg ' + role;
+          if (role === 'assistant') {
+            var bodyHtml = processAdminReplyForDisplay(text);
+            div.innerHTML = 'АДМИН ПОМОЩНИК: ' + (bodyHtml || '—');
+          } else {
+            div.textContent = 'Вы: ' + text;
+          }
+          log.appendChild(div);
+          log.scrollTop = log.scrollHeight;
+        }
+        function stripSavedConfirmationFromReply(reply) {
+          if (!reply || !reply.trim()) return '';
+          var r = reply.trim();
+          var lines = r.split(/\n/);
+          var out = lines.filter(function(line) {
+            var t = line.trim();
+            if (!t) return true;
+            return !(/✓/.test(t) && /сохранён/i.test(t));
+          }).join('\n').trim();
+          if (out === r && /сохранён/i.test(r) && (r.length < 320)) return '';
+          return out;
+        }
+        (async function sendInitialAndShowReply() {
+          const initMsg = 'Начало сеанса. Промпт бота для клиентов редактируется в разделе «Промпт», промпт админ-бота — в «Промпт админ-бота». Задай первый или следующий вопрос по настройке промпта (роль, стиль, ограничения). Не приветствуй и не представляйся — только один вопрос или предложение.';
+          if (!tenantId) await ensureTenant();
+          adminChatHistory.push({ role: 'user', content: initMsg });
+          var loadingEl = document.createElement('div');
+          loadingEl.className = 'chat-msg assistant loading';
+          loadingEl.id = 'adminChatLoadingMsg';
+          loadingEl.textContent = 'Думаю';
+          log.appendChild(loadingEl);
+          log.scrollTop = log.scrollHeight;
+          try {
+            const res = await fetch(base + '/' + tenantId + '/admin/chat', {
+              method: 'POST',
+              headers: headers(true),
+              body: JSON.stringify({ message: initMsg, history: [], session_id: adminChatSessionId })
+            });
+            var loadingNode = document.getElementById('adminChatLoadingMsg');
+            if (loadingNode && loadingNode.parentNode) loadingNode.remove();
+            const data = res.ok ? await res.json() : null;
+            let reply = (data && data.reply) ? data.reply : (res.ok ? '' : 'Ошибка загрузки. Попробуйте написать сообщение.');
+            if (data && data.prompt_saved) {
+              var savedDiv = document.createElement('div');
+              savedDiv.className = 'chat-msg saved-notice';
+              savedDiv.textContent = '✓ Промпт бота-пользователя сохранён. Проверьте страницу «Промпт».';
+              log.appendChild(savedDiv);
+              reply = stripSavedConfirmationFromReply(reply || '');
+            }
+            if ((reply || '').trim()) {
+              appendAdminMsg('assistant', reply);
+              adminChatHistory.push({ role: 'assistant', content: reply });
+            }
+          } catch (e) {
+            var loadingNode2 = document.getElementById('adminChatLoadingMsg');
+            if (loadingNode2 && loadingNode2.parentNode) loadingNode2.remove();
+            appendAdminMsg('assistant', 'Ошибка: ' + (e.message || 'сеть'));
+            adminChatHistory.push({ role: 'assistant', content: 'Ошибка: ' + (e.message || 'сеть') });
+          } finally {
+            log.scrollTop = log.scrollHeight;
+          }
+        })();
+        send.addEventListener('click', async () => {
+          const msg = (input.value || '').trim();
+          if (!msg) return;
+          if (!tenantId) await ensureTenant();
+          input.value = '';
+          appendAdminMsg('user', msg);
+          adminChatHistory.push({ role: 'user', content: msg });
+          var loadingEl = document.createElement('div');
+          loadingEl.className = 'chat-msg assistant loading';
+          loadingEl.id = 'adminChatLoadingMsg';
+          loadingEl.textContent = 'Думаю';
+          log.appendChild(loadingEl);
+          log.scrollTop = log.scrollHeight;
+          send.disabled = true;
+          input.disabled = true;
+          try {
+            const res = await fetch(base + '/' + tenantId + '/admin/chat', {
+              method: 'POST',
+              headers: headers(true),
+              body: JSON.stringify({ message: msg, history: adminChatHistory.slice(0, -1), session_id: adminChatSessionId })
+            });
+            var loadingNode = document.getElementById('adminChatLoadingMsg');
+            if (loadingNode && loadingNode.parentNode) loadingNode.remove();
+            if (!res.ok) {
+              const errText = await res.text();
+              appendAdminMsg('assistant', 'Ошибка: ' + errText);
+              adminChatHistory.push({ role: 'assistant', content: 'Ошибка: ' + errText });
+              return;
+            }
+            const data = await res.json();
+            let reply = data.reply || '';
+            if (data.prompt_saved) {
+              var savedDiv = document.createElement('div');
+              savedDiv.className = 'chat-msg saved-notice';
+              savedDiv.textContent = '✓ Промпт бота-пользователя сохранён. Проверьте страницу «Промпт».';
+              log.appendChild(savedDiv);
+              reply = stripSavedConfirmationFromReply(reply || '');
+            }
+            if ((reply || '').trim()) {
+              appendAdminMsg('assistant', reply);
+              adminChatHistory.push({ role: 'assistant', content: reply });
+            } else if (data.prompt_saved) {
+              adminChatHistory.push({ role: 'assistant', content: '✓ Промпт бота-пользователя сохранён. Проверьте страницу «Промпт».' });
+            }
+            if (data.session_id) adminChatSessionId = data.session_id;
+          } catch (e) {
+            var loadingNode2 = document.getElementById('adminChatLoadingMsg');
+            if (loadingNode2 && loadingNode2.parentNode) loadingNode2.remove();
+            appendAdminMsg('assistant', 'Ошибка: ' + (e.message || 'сеть'));
+            adminChatHistory.push({ role: 'assistant', content: 'Ошибка: ' + (e.message || 'сеть') });
+          } finally {
+            send.disabled = false;
+            input.disabled = false;
+            log.scrollTop = log.scrollHeight;
+          }
+        });
+        adminChatInited = true;
+      }
+
+      document.getElementById('adminChatToggler').addEventListener('click', function() {
+        document.body.classList.toggle('show-admin-chat');
+        if (document.body.classList.contains('show-admin-chat')) {
+          if (requireAuth()) {
+            ensureTenant().then(function() { initAdminChatOnce(); });
+          } else {
+            initAdminChatOnce();
+          }
+        }
+      });
+      document.getElementById('adminChatClose').addEventListener('click', function() {
+        document.body.classList.remove('show-admin-chat');
+        adminChatSessionId = null;
+      });
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      var ALLOWED_HTML_TAGS = /^(p|div|span|br|strong|b|em|i|u|ul|ol|li|a|img|table|thead|tbody|tr|td|th|h1|h2|h3|h4)$/i;
+      var HTML_BLOCK_RE = /\[HTML\]([\s\S]*?)\[\/HTML\]/gi;
+      var ALLOWED_STYLE_PROPS = /^(color|background-color|background|font-weight|font-style|font-size|text-align|margin|margin-top|margin-bottom|margin-left|margin-right|padding|padding-top|padding-bottom|padding-left|padding-right|display|width|height|max-width|border|border-radius|list-style-type|text-decoration|line-height)$/i;
+      var DANGEROUS_STYLE = /expression\s*\(|javascript\s*:|url\s*\(\s*["']?\s*javascript|behavior\s*:|@import|-moz-binding/i;
+      function sanitizeStyleValue(value) {
+        if (!value || typeof value !== 'string') return '';
+        var out = [], parts = value.split(';');
+        for (var i = 0; i < parts.length; i++) {
+          var part = parts[i].trim(), colon = part.indexOf(':');
+          if (colon <= 0) continue;
+          var prop = part.slice(0, colon).trim().toLowerCase(), val = part.slice(colon + 1).trim();
+          if (DANGEROUS_STYLE.test(val)) continue;
+          if (ALLOWED_STYLE_PROPS.test(prop)) out.push(prop + ':' + val);
+        }
+        return out.join('; ');
+      }
+      function sanitizeHtmlForChat(raw) {
+        if (!raw || typeof raw !== 'string') return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = raw.trim();
+        [].slice.call(tmp.querySelectorAll('script, iframe, form, object, embed, style')).forEach(function(el) { el.remove(); });
+        tmp.querySelectorAll('*').forEach(function(el) {
+          if (!ALLOWED_HTML_TAGS.test(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent)); return; }
+          for (var i = el.attributes.length - 1; i >= 0; i--) {
+            var a = el.attributes[i];
+            if (/^on/i.test(a.name)) el.removeAttribute(a.name);
+            else if (el.tagName === 'A' && (a.name === 'href' || a.name === 'target' || a.name === 'rel')) { }
+            else if (el.tagName === 'IMG' && (a.name === 'src' || a.name === 'alt' || a.name === 'loading')) { }
+            else if (a.name === 'style') { var safe = sanitizeStyleValue(a.value); if (safe) el.setAttribute('style', safe); else el.removeAttribute('style'); }
+            else if (a.name !== 'href' && a.name !== 'src' && a.name !== 'alt' && a.name !== 'target' && a.name !== 'rel' && a.name !== 'loading') el.removeAttribute(a.name);
+          }
+          if (el.tagName === 'A') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+        });
+        return tmp.innerHTML;
+      }
+      function processHtmlBlocksAndText(text) {
+        if (text == null || text === '') return '';
+        var parts = [], lastIndex = 0;
+        HTML_BLOCK_RE.lastIndex = 0;
+        var m;
+        while ((m = HTML_BLOCK_RE.exec(text)) !== null) {
+          if (m.index > lastIndex) {
+            var textSegment = text.slice(lastIndex, m.index);
+            parts.push(textSegment.split('\n').map(function(l) { return escapeHtml((l || '').trim()); }).join('<br>'));
+          }
+          parts.push(sanitizeHtmlForChat(m[1]));
+          lastIndex = HTML_BLOCK_RE.lastIndex;
+        }
+        if (lastIndex < text.length) {
+          var rest = text.slice(lastIndex);
+          parts.push(rest.split('\n').map(function(l) { return escapeHtml((l || '').trim()); }).join('<br>'));
+        }
+        return parts.join('');
+      }
+
+      var ALLOWED_HTML_TAGS = /^(p|div|span|br|strong|b|em|i|u|ul|ol|li|a|img|table|thead|tbody|tr|td|th|h1|h2|h3|h4)$/i;
+      var HTML_BLOCK_RE = /\[HTML\]([\s\S]*?)\[\/HTML\]/gi;
+      var ALLOWED_STYLE_PROPS = /^(color|background-color|background|font-weight|font-style|font-size|text-align|margin|margin-top|margin-bottom|margin-left|margin-right|padding|padding-top|padding-bottom|padding-left|padding-right|display|width|height|max-width|border|border-radius|list-style-type|text-decoration|line-height)$/i;
+      var DANGEROUS_STYLE = /expression\s*\(|javascript\s*:|url\s*\(\s*["']?\s*javascript|behavior\s*:|@import|-moz-binding/i;
+      function sanitizeStyleValue(value) {
+        if (!value || typeof value !== 'string') return '';
+        var out = [];
+        var parts = value.split(';');
+        for (var i = 0; i < parts.length; i++) {
+          var part = parts[i].trim();
+          var colon = part.indexOf(':');
+          if (colon <= 0) continue;
+          var prop = part.slice(0, colon).trim().toLowerCase();
+          var val = part.slice(colon + 1).trim();
+          if (DANGEROUS_STYLE.test(val)) continue;
+          if (ALLOWED_STYLE_PROPS.test(prop)) out.push(prop + ':' + val);
+        }
+        return out.join('; ');
+      }
+      function sanitizeHtmlForChat(raw) {
+        if (!raw || typeof raw !== 'string') return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = raw.trim();
+        [].slice.call(tmp.querySelectorAll('script, iframe, form, object, embed, style')).forEach(function(el) { el.remove(); });
+        tmp.querySelectorAll('*').forEach(function(el) {
+          if (!ALLOWED_HTML_TAGS.test(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent)); return; }
+          for (var i = el.attributes.length - 1; i >= 0; i--) {
+            var a = el.attributes[i];
+            if (/^on/i.test(a.name)) el.removeAttribute(a.name);
+            else if (el.tagName === 'A' && (a.name === 'href' || a.name === 'target' || a.name === 'rel')) { }
+            else if (el.tagName === 'IMG' && (a.name === 'src' || a.name === 'alt' || a.name === 'loading')) { }
+            else if (a.name === 'style') {
+              var safe = sanitizeStyleValue(a.value);
+              if (safe) el.setAttribute('style', safe); else el.removeAttribute('style');
+            } else if (a.name !== 'href' && a.name !== 'src' && a.name !== 'alt' && a.name !== 'target' && a.name !== 'rel' && a.name !== 'loading') el.removeAttribute(a.name);
+          }
+          if (el.tagName === 'A') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+        });
+        return tmp.innerHTML;
+      }
+      /** После экранирования возвращает в разметку только безопасные инлайн-теги (strong, b, em, i), чтобы они рендерились, а не показывались как текст. */
+      function unescapeSafeInlineTags(escapedStr) {
+        return (escapedStr || '')
+          .replace(/&lt;strong&gt;/gi, '<strong>').replace(/&lt;\/strong&gt;/gi, '</strong>')
+          .replace(/&lt;b&gt;/gi, '<b>').replace(/&lt;\/b&gt;/gi, '</b>')
+          .replace(/&lt;em&gt;/gi, '<em>').replace(/&lt;\/em&gt;/gi, '</em>')
+          .replace(/&lt;i&gt;/gi, '<i>').replace(/&lt;\/i&gt;/gi, '</i>');
+      }
+      function processAdminReplyForDisplay(text) {
+        if (!text || typeof text !== 'string') return '';
+        var parts = [];
+        var lastIndex = 0;
+        HTML_BLOCK_RE.lastIndex = 0;
+        var m;
+        while ((m = HTML_BLOCK_RE.exec(text)) !== null) {
+          if (m.index > lastIndex) {
+            var segment = text.slice(lastIndex, m.index);
+            segment = (typeof escapeHtml === 'function' ? escapeHtml(segment) : segment.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+            segment = unescapeSafeInlineTags(segment);
+            segment = segment.replace(/Осталось\s+(нерешенных\s+)?вопросов:?\s*\d+/gi, function(match) { return '<span class="admin-chat-unresolved-count">' + match + '</span>'; });
+            parts.push(segment.replace(/\n/g, '<br>'));
+          }
+          parts.push(sanitizeHtmlForChat(m[1]));
+          lastIndex = HTML_BLOCK_RE.lastIndex;
+        }
+        if (lastIndex < text.length) {
+          var rest = text.slice(lastIndex);
+          rest = (typeof escapeHtml === 'function' ? escapeHtml(rest) : rest.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+          rest = unescapeSafeInlineTags(rest);
+          rest = rest.replace(/Осталось\s+(нерешенных\s+)?вопросов:?\s*\d+/gi, function(match) { return '<span class="admin-chat-unresolved-count">' + match + '</span>'; });
+          parts.push(rest.replace(/\n/g, '<br>'));
+        }
+        return parts.join('');
+      }
+
+      async function loadLeads(dateFromVal, dateToVal, page) {
+        page = page || 1;
+        leadsPage = page;
+        if (!requireAuth()) return;
+        await ensureTenant();
+        let offset = (page - 1) * LEADS_PAGE_SIZE;
+        let url = base + '/' + tenantId + '/me/leads?limit=' + LEADS_PAGE_SIZE + '&offset=' + offset;
+        if (dateFromVal) url += '&date_from=' + encodeURIComponent(dateFromVal);
+        if (dateToVal) url += '&date_to=' + encodeURIComponent(dateToVal);
+        const r = await fetch(url, { headers: headers() });
+        if (!r.ok) {
+          const errBody = await r.text();
+          let errMsg = 'Ошибка загрузки лидов.';
+          try { const j = JSON.parse(errBody); errMsg = j.detail || errMsg; } catch (_) {}
+          if (r.status === 401) errMsg = 'Войдите в кабинет.';
+          document.getElementById('content').innerHTML = '<p class="error">' + escapeHtml(errMsg) + '</p>';
+          return;
+        }
+        let data;
+        try { data = await r.json(); } catch (_) {
+          document.getElementById('content').innerHTML = '<p class="error">Неверный ответ сервера.</p>';
+          return;
+        }
+        const leads = Array.isArray(data) ? data : (data.items || []);
+        let html = '<h2>Лиды</h2>';
+        html += '<p class="hint">Контакты (email, телефон), оставленные посетителями в чате. Один лид на диалог.</p>';
+        html += '<div class="date-filter">';
+        html += '<label>С: <input type="date" id="leadsDateFrom" value="' + escapeHtml(dateFromVal || '') + '"></label>';
+        html += '<label>По: <input type="date" id="leadsDateTo" value="' + escapeHtml(dateToVal || '') + '"></label>';
+        html += '<button type="button" id="leadsFilterBtn">Применить</button>';
+        html += '<button type="button" class="reset-btn" id="leadsFilterReset">Сбросить</button>';
+        html += '</div>';
+        if (leads.length === 0) {
+          html += '<p>Нет лидов за выбранный период.</p>';
+        } else {
+          html += '<ul class="list leads-list">';
+          for (const l of leads) {
+            html += '<li class="lead-item">';
+            html += '<span class="contact">' + escapeHtml(l.contact_text) + '</span>';
+            html += '<div class="meta">user: ' + escapeHtml(l.user_id) + ' · диалог: <a href="#" class="lead-dialog-link" data-dialog-id="' + escapeHtml(l.dialog_id) + '">открыть</a></div>';
+            html += '<div class="lead-date">' + formatDate(l.updated_at || l.created_at) + '</div>';
+            html += '</li>';
+          }
+          html += '</ul>';
+        }
+        document.getElementById('content').innerHTML = html;
+        document.getElementById('content').querySelectorAll('a.lead-dialog-link').forEach(function(a) {
+          a.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dialogId = a.getAttribute('data-dialog-id');
+            window.history.pushState({}, '', '/' + tenantSlug + '/my/dialogs/' + dialogId);
+            route();
+          });
+        });
+        var filterBtn = document.getElementById('leadsFilterBtn');
+        if (filterBtn) filterBtn.addEventListener('click', function() {
+          loadLeads(document.getElementById('leadsDateFrom').value || undefined, document.getElementById('leadsDateTo').value || undefined, 1);
+        });
+        var resetBtn = document.getElementById('leadsFilterReset');
+        if (resetBtn) resetBtn.addEventListener('click', function() {
+          document.getElementById('leadsDateFrom').value = '';
+          document.getElementById('leadsDateTo').value = '';
+          loadLeads(undefined, undefined, 1);
+        });
+        var hasNext = leads.length === LEADS_PAGE_SIZE;
+        var pagHtml = '<div class="pagination"><button type="button" id="leadsPrev">←</button>';
+        pagHtml += '<span>Страница ' + leadsPage + '</span>';
+        pagHtml += '<button type="button" id="leadsNext">→</button></div>';
+        document.getElementById('content').insertAdjacentHTML('beforeend', pagHtml);
+        var prevBtn = document.getElementById('leadsPrev');
+        var nextBtn = document.getElementById('leadsNext');
+        if (prevBtn) {
+          prevBtn.disabled = leadsPage <= 1;
+          prevBtn.addEventListener('click', function() {
+            if (leadsPage > 1) {
+              var from = document.getElementById('leadsDateFrom').value;
+              var to = document.getElementById('leadsDateTo').value;
+              loadLeads(from || undefined, to || undefined, leadsPage - 1);
+            }
+          });
+        }
+        if (nextBtn) {
+          nextBtn.disabled = !hasNext;
+          nextBtn.addEventListener('click', function() {
+            if (hasNext) {
+              var from = document.getElementById('leadsDateFrom').value;
+              var to = document.getElementById('leadsDateTo').value;
+              loadLeads(from || undefined, to || undefined, leadsPage + 1);
+            }
+          });
+        }
+      }
+
+      async function loadGallery() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        document.getElementById('content').innerHTML = '<div class="page-gallery"><h2>Галерея</h2><p class="hint">Группы изображений для показа в чате.</p><p class="content-loading">Загрузка…</p></div>';
+        const r = await fetch(base + '/' + tenantId + '/me/gallery/groups', { headers: headers() });
+        let html = '<div class="page-gallery"><h2>Галерея</h2><p class="hint">Группы изображений для показа в чате.</p>';
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = html + '<p class="error">Ошибка загрузки. Убедитесь, что микросервис галереи запущен.</p></div>';
+          return;
+        }
+        const groups = await r.json();
+        html += '<div class="panel gallery-create-panel"><h3>Создать группу</h3><input type="text" id="galleryGroupName" placeholder="Название группы" maxlength="256"><textarea id="galleryGroupDesc" placeholder="Описание (необязательно)" rows="2"></textarea><button type="button" id="galleryCreateGroupBtn">Создать группу</button></div>';
+        if (groups.length === 0) {
+          html += '<p class="hint">Нет групп. Создайте группу и добавьте в неё изображения (загрузка с компьютера).</p>';
+        } else {
+          html += '<div class="gallery-cards">';
+          for (const g of groups) {
+            html += '<div class="gallery-card" data-group-id="' + g.id + '">';
+            html += '<div class="gallery-card-title">' + escapeHtml(g.name) + '</div>';
+            html += '<div class="gallery-card-meta">' + (g.image_count || 0) + ' фото</div>';
+            if (g.description) html += '<p class="gallery-card-desc">' + escapeHtml((g.description || '').slice(0, 120)) + (g.description.length > 120 ? '…' : '') + '</p>';
+            html += '<div class="gallery-card-actions"><button type="button" class="gallery-view-group" data-group-id="' + g.id + '">Открыть</button><button type="button" class="delete gallery-delete-group" data-group-id="' + g.id + '">Удалить</button></div></div>';
+          }
+          html += '</div>';
+        }
+        document.getElementById('content').innerHTML = html + '</div>';
+        document.getElementById('galleryCreateGroupBtn')?.addEventListener('click', async function() {
+          const name = document.getElementById('galleryGroupName').value.trim();
+          if (!name) { alert('Введите название'); return; }
+          const res = await fetch(base + '/' + tenantId + '/me/gallery/groups', { method: 'POST', headers: headers(true), body: JSON.stringify({ tenant_id: tenantId, name: name, description: document.getElementById('galleryGroupDesc').value.trim() || null }) });
+          if (!res.ok) { alert('Ошибка: ' + await res.text()); return; }
+          resetAdminChat();
+          loadGallery();
+        });
+        document.getElementById('content').querySelectorAll('.gallery-view-group').forEach(function(btn) {
+          btn.addEventListener('click', function() { window.history.pushState({}, '', '/' + tenantSlug + '/my/gallery/' + btn.getAttribute('data-group-id')); route(); });
+        });
+        document.getElementById('content').querySelectorAll('.gallery-delete-group').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            if (!confirm('Удалить группу?')) return;
+            const id = btn.getAttribute('data-group-id');
+            const res = await fetch(base + '/' + tenantId + '/me/gallery/groups/' + id, { method: 'DELETE', headers: headers() });
+            if (res.ok) loadGallery(); else alert('Ошибка удаления');
+          });
+        });
+      }
+
+      async function loadGalleryGroup(groupId) {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        document.getElementById('content').innerHTML = '<div class="content-loading">Загрузка группы…</div>';
+        const r = await fetch(base + '/' + tenantId + '/me/gallery/groups/' + groupId, { headers: headers() });
+        if (!r.ok) { document.getElementById('content').innerHTML = '<p class="error">Группа не найдена</p>'; return; }
+        const g = await r.json();
+        let html = '<div class="page-gallery"><div class="gallery-detail-back"><a href="#" data-goto="gallery">← К списку галерей</a></div>';
+        html += '<h2>' + escapeHtml(g.name) + '</h2>';
+        if (g.description) html += '<p class="hint">' + escapeHtml(g.description) + '</p>';
+        html += '<div class="panel gallery-create-panel"><h3>Добавить изображение</h3><input type="file" id="galleryImageFile" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none"><button type="button" id="galleryAddImageBtn">Выбрать файл…</button><span id="galleryUploadStatus" class="hint"></span><div id="galleryProgressWrap" class="upload-progress-wrap"><div class="upload-progress-bar"><div class="fill" id="galleryProgressBar"></div></div><div class="upload-progress-text" id="galleryProgressText"></div></div></div>';
+        html += '<h3>Изображения</h3>';
+        if (!g.images || g.images.length === 0) {
+          html += '<p class="hint">В группе пока нет изображений. Нажмите «Выбрать файл…» и загрузите изображение с компьютера.</p>';
+        } else {
+          html += '<div class="gallery-images-grid">';
+          for (const img of g.images) {
+            html += '<div class="gallery-image-item"><img src="' + escapeHtml(img.url) + '" alt="" onerror="this.style.background=\'var(--bg)\';this.style.minHeight=\'120px\'"><span class="img-url" title="' + escapeHtml(img.url) + '">' + escapeHtml(img.url.length > 40 ? img.url.slice(0, 40) + '…' : img.url) + '</span><button type="button" class="delete gallery-delete-image img-remove" data-image-id="' + img.id + '">Удалить</button></div>';
+          }
+          html += '</div>';
+        }
+        document.getElementById('content').innerHTML = html + '</div>';
+        document.querySelector('[data-goto="gallery"]')?.addEventListener('click', function(e) { e.preventDefault(); window.history.pushState({}, '', '/' + tenantSlug + '/my/gallery'); route(); });
+        document.getElementById('galleryAddImageBtn')?.addEventListener('click', function() { document.getElementById('galleryImageFile').click(); });
+        document.getElementById('galleryImageFile')?.addEventListener('change', function() {
+          const input = this;
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const statusEl = document.getElementById('galleryUploadStatus');
+          const wrap = document.getElementById('galleryProgressWrap');
+          const barEl = document.getElementById('galleryProgressBar');
+          const textEl = document.getElementById('galleryProgressText');
+          statusEl.textContent = '';
+          wrap.classList.add('active');
+          barEl.style.width = '0%';
+          textEl.textContent = 'Загрузка 0%';
+          const fd = new FormData();
+          fd.append('file', file);
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', base + '/' + tenantId + '/me/gallery/groups/' + groupId + '/images');
+          xhr.setRequestHeader('Authorization', 'Bearer ' + (localStorage.getItem('cip_access_token') || ''));
+          xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) { var pct = Math.round((e.loaded / e.total) * 100); barEl.style.width = pct + '%'; textEl.textContent = 'Загрузка ' + pct + '%'; }
+          });
+          xhr.addEventListener('load', function() {
+            wrap.classList.remove('active');
+            if (xhr.status >= 200 && xhr.status < 300) { statusEl.textContent = 'Добавлено.'; barEl.style.width = '100%'; input.value = ''; resetAdminChat(); loadGalleryGroup(groupId); }
+            else { try { var err = JSON.parse(xhr.responseText); statusEl.textContent = ''; alert('Ошибка: ' + (err.detail || xhr.statusText)); } catch (e) { alert('Ошибка: ' + xhr.statusText); } input.value = ''; }
+          });
+          xhr.addEventListener('error', function() { wrap.classList.remove('active'); statusEl.textContent = ''; alert('Ошибка сети'); input.value = ''; });
+          xhr.send(fd);
+        });
+        document.getElementById('content').querySelectorAll('.gallery-delete-image').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            if (!confirm('Удалить изображение?')) return;
+            const imgId = btn.getAttribute('data-image-id');
+            const res = await fetch(base + '/' + tenantId + '/me/gallery/groups/' + groupId + '/images/' + imgId, { method: 'DELETE', headers: headers() });
+            if (res.ok) loadGalleryGroup(groupId); else alert('Ошибка удаления');
+          });
+        });
+      }
+
+      async function loadRag() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        document.getElementById('content').innerHTML = '<div class="page-rag"><h2>Документы (RAG)</h2><p class="hint">PDF загружаются и распознаются в markdown. В чате доступны команды RAG_LIST_DOCUMENTS, RAG_GET_DOCUMENT, RAG_SEARCH.</p><p class="content-loading">Загрузка…</p></div>';
+        const r = await fetch(base + '/' + tenantId + '/me/rag/documents', { headers: headers() });
+        let html = '<div class="page-rag"><h2>Документы (RAG)</h2><p class="hint">PDF загружаются и распознаются в markdown. В чате бот может искать по документам и выдавать выдержки.</p>';
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = html + '<p class="error">Ошибка загрузки. Убедитесь, что микросервис RAG запущен.</p></div>';
+          return;
+        }
+        const docs = await r.json();
+        html += '<div class="panel rag-upload-panel"><h3>Загрузить PDF</h3><input type="file" id="ragDocFile" accept=".pdf"><button type="button" id="ragUploadBtn">Преобразовать и предпросмотр</button><div id="ragProgressWrap" class="upload-progress-wrap"><div class="upload-progress-bar"><div class="fill" id="ragProgressBar"></div></div><div class="upload-progress-text" id="ragProgressText"></div></div></div>';
+        if (docs.length === 0) {
+          html += '<p class="hint">Нет документов. Загрузите PDF — он будет распознан и сохранён в виде текста (markdown).</p>';
+        } else {
+          html += '<h3>Список документов</h3><ul class="rag-doc-list">';
+          for (const d of docs) {
+            var meta = formatDate(d.created_at);
+            if (d.source_file_name) meta += ' · ' + escapeHtml(d.source_file_name);
+            html += '<li class="rag-doc-item"><div class="rag-doc-info"><div class="rag-doc-name">' + escapeHtml(d.name) + '</div><div class="rag-doc-meta">' + meta + '</div></div><div class="rag-doc-actions"><button type="button" class="rag-view-doc" data-doc-id="' + d.id + '">Просмотр</button><button type="button" class="delete rag-delete-doc" data-doc-id="' + d.id + '">Удалить</button></div></li>';
+          }
+          html += '</ul>';
+        }
+        document.getElementById('content').innerHTML = html + '</div>';
+        document.getElementById('ragUploadBtn')?.addEventListener('click', function() {
+          const fileInput = document.getElementById('ragDocFile');
+          if (!fileInput?.files?.length) { alert('Выберите PDF'); return; }
+          const wrap = document.getElementById('ragProgressWrap');
+          const barEl = document.getElementById('ragProgressBar');
+          const textEl = document.getElementById('ragProgressText');
+          wrap.classList.add('active');
+          barEl.style.width = '0%';
+          textEl.innerHTML = 'Загрузка файла 0%';
+          const fd = new FormData();
+          fd.append('file', fileInput.files[0]);
+          const sourceFileName = fileInput.files[0].name || null;
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', base + '/' + tenantId + '/me/rag/documents/preview');
+          xhr.setRequestHeader('Authorization', headers().Authorization || '');
+          xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) { var pct = Math.round((e.loaded / e.total) * 100); barEl.style.width = pct + '%'; textEl.innerHTML = 'Загрузка файла ' + pct + '%'; }
+          });
+          xhr.upload.addEventListener('load', function() {
+            barEl.style.width = '100%'; textEl.innerHTML = '<span class="upload-progress-spinner"></span>Преобразование в Markdown…';
+          });
+          xhr.addEventListener('load', function() {
+            wrap.classList.remove('active');
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                var data = JSON.parse(xhr.responseText);
+                var modal = document.createElement('div');
+                modal.className = 'rag-preview-overlay';
+                modal.innerHTML = '<div class="rag-preview-modal"><h3>Предпросмотр Markdown</h3><div class="rag-preview-body"><label>Название документа</label><input type="text" id="ragPreviewName" value="' + escapeHtml(data.suggested_name || 'document') + '"><label>Текст (Markdown)</label><textarea id="ragPreviewMd" spellcheck="false">' + escapeHtml(data.markdown || '') + '</textarea></div><div class="rag-preview-footer"><button type="button" class="btn-cancel rag-preview-cancel">Отмена</button><button type="button" class="btn-save rag-preview-save">Сохранить в базу</button></div></div>';
+                document.body.appendChild(modal);
+                modal.querySelector('.rag-preview-cancel').onclick = function() { modal.remove(); };
+                modal.querySelector('.rag-preview-save').onclick = async function() {
+                  var name = document.getElementById('ragPreviewName').value.trim() || 'document';
+                  var contentMd = document.getElementById('ragPreviewMd').value;
+                  if (!contentMd) { alert('Текст не может быть пустым'); return; }
+                  var saveRes = await fetch(base + '/' + tenantId + '/me/rag/documents/save', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers()), body: JSON.stringify({ name: name, content_md: contentMd, source_file_name: sourceFileName || null }) });
+                  if (saveRes.ok) { modal.remove(); resetAdminChat(); loadRag(); }
+                  else { alert('Ошибка сохранения: ' + await saveRes.text()); }
+                };
+                modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+              } catch (e) { alert('Ошибка: ' + (e.message || String(e))); }
+            } else { alert('Ошибка: ' + (xhr.responseText || xhr.statusText)); }
+          });
+          xhr.addEventListener('error', function() { wrap.classList.remove('active'); alert('Ошибка сети'); });
+          xhr.send(fd);
+        });
+        document.getElementById('content').querySelectorAll('.rag-view-doc').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            const id = btn.getAttribute('data-doc-id');
+            try {
+              const res = await fetch(base + '/' + tenantId + '/me/rag/documents/' + id, { headers: headers() });
+              if (!res.ok) { alert('Ошибка загрузки документа'); return; }
+              const data = await res.json();
+              var modal = document.createElement('div');
+              modal.className = 'rag-preview-overlay';
+              modal.innerHTML = '<div class="rag-preview-modal"><h3>Содержимое: ' + escapeHtml(data.name || 'документ') + '</h3><div class="rag-preview-body"><label>Текст (Markdown)</label><textarea id="ragViewMd" spellcheck="false" readonly>' + escapeHtml(data.content_md || '') + '</textarea></div><div class="rag-preview-footer"><button type="button" class="btn-cancel rag-view-close">Закрыть</button></div></div>';
+              document.body.appendChild(modal);
+              modal.querySelector('.rag-view-close').onclick = function() { modal.remove(); };
+              modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+            } catch (e) { alert('Ошибка: ' + (e.message || String(e))); }
+          });
+        });
+        document.getElementById('content').querySelectorAll('.rag-delete-doc').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            if (!confirm('Удалить документ?')) return;
+            const id = btn.getAttribute('data-doc-id');
+            const res = await fetch(base + '/' + tenantId + '/me/rag/documents/' + id, { method: 'DELETE', headers: headers() });
+            if (res.ok) loadRag(); else alert('Ошибка удаления');
+          });
+        });
+      }
+
+      async function loadMcpServers() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        document.getElementById('content').innerHTML = '<div class="page-mcp"><h2>MCP серверы</h2><p class="content-loading">Загрузка…</p></div>';
+        const r = await fetch(base + '/' + tenantId + '/me/mcp-servers?with_tools=true', { headers: headers() });
+        if (r.status === 403) {
+          document.getElementById('content').innerHTML = renderAdminOnlyError('MCP серверы');
+          return;
+        }
+        let html = '<div class="page-mcp"><h2>MCP серверы</h2><p class="hint">Подключайте MCP-серверы по URL. Их инструменты (tools) будут доступны чат-боту для клиентов.</p>';
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = html + '<p class="error">Ошибка загрузки списка.</p></div>';
+          return;
+        }
+        const servers = await r.json();
+        html += '<div class="panel mcp-form-panel"><h3>Добавить сервер</h3>';
+        html += '<label>Название <input type="text" id="mcpServerName" placeholder="Например: Погода" maxlength="256"></label>';
+        html += '<label>URL (до /mcp) <input type="text" id="mcpServerUrl" placeholder="http://host:8010" maxlength="2048"></label>';
+        html += '<label><input type="checkbox" id="mcpServerEnabled" checked> Включён</label>';
+        html += '<button type="button" id="mcpServerAddBtn">Добавить сервер</button></div>';
+        html += '<h3>Подключённые серверы</h3>';
+        if (servers.length === 0) {
+          html += '<p class="hint">Нет добавленных серверов. Укажите название и URL MCP-сервера (например, http://gallery:8010 для галереи в Docker) и нажмите «Добавить сервер».</p>';
+        } else {
+          html += '<div class="mcp-server-cards">';
+          for (const s of servers) {
+            html += '<div class="mcp-server-card" data-server-id="' + escapeHtml(s.id) + '">';
+            html += '<div class="mcp-server-header"><span class="mcp-server-name">' + escapeHtml(s.name) + '</span>';
+            if (!s.enabled) html += ' <span class="mcp-server-badge disabled">выключен</span>';
+            html += '</div>';
+            html += '<div class="mcp-server-url">' + escapeHtml(s.base_url) + '</div>';
+            if (s.tools && s.tools.length > 0) {
+              html += '<div class="mcp-server-tools"><strong>Инструменты (' + s.tools.length + '):</strong><ul>';
+              for (const t of s.tools) {
+                html += '<li><code>' + escapeHtml(t.name) + '</code>';
+                if (t.description) html += ' — ' + escapeHtml(t.description.slice(0, 120)) + (t.description.length > 120 ? '…' : '');
+                html += '</li>';
+              }
+              html += '</ul></div>';
+            } else {
+              html += '<div class="mcp-server-tools hint">Инструменты не загружены (сервер недоступен или не отвечает).</div>';
+            }
+            html += '<div class="mcp-server-actions"><button type="button" class="delete mcp-server-delete" data-server-id="' + s.id + '">Удалить</button></div></div>';
+          }
+          html += '</div>';
+        }
+        document.getElementById('content').innerHTML = html + '</div>';
+        document.getElementById('mcpServerAddBtn')?.addEventListener('click', async function() {
+          const name = document.getElementById('mcpServerName').value.trim();
+          const baseUrl = document.getElementById('mcpServerUrl').value.trim();
+          if (!name || !baseUrl) { alert('Укажите название и URL'); return; }
+          const enabled = document.getElementById('mcpServerEnabled').checked;
+          const res = await fetch(base + '/' + tenantId + '/me/mcp-servers', {
+            method: 'POST',
+            headers: headers(true),
+            body: JSON.stringify({ name: name, base_url: baseUrl, enabled: enabled })
+          });
+          if (res.ok) { loadMcpServers(); document.getElementById('mcpServerName').value = ''; document.getElementById('mcpServerUrl').value = ''; }
+          else { alert('Ошибка: ' + (await res.text())); }
+        });
+        document.getElementById('content').querySelectorAll('.mcp-server-delete').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            if (!confirm('Удалить этот MCP сервер?')) return;
+            const id = btn.getAttribute('data-server-id');
+            const res = await fetch(base + '/' + tenantId + '/me/mcp-servers/' + id, { method: 'DELETE', headers: headers() });
+            if (res.ok) loadMcpServers(); else alert('Ошибка удаления');
+          });
+        });
+      }
+
+      var CHAT_THEMES = [
+        { id: 'cyan', name: 'Бирюзовый', color: '#00acc1' },
+        { id: 'blue', name: 'Синий', color: '#1976d2' },
+        { id: 'green', name: 'Зелёный', color: '#2e7d32' },
+        { id: 'purple', name: 'Фиолетовый', color: '#7b1fa2' },
+        { id: 'orange', name: 'Оранжевый', color: '#e65100' },
+        { id: 'teal', name: 'Тиловый', color: '#00695c' }
+      ];
+
+      async function loadProfile() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        const r = await fetch(base + '/' + tenantId + '/me/profile', { headers: headers() });
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Ошибка загрузки профиля</p>';
+          return;
+        }
+        const p = await r.json();
+        const currentTheme = p.chat_theme || 'cyan';
+        const quickButtons = Array.isArray(p.quick_reply_buttons) ? p.quick_reply_buttons : ['Расскажи о вас', 'Какие услуги?', 'Контакты'];
+
+        let html = '<h2>Профиль</h2>';
+        html += '<p class="hint">Имя и контакт. Промпт бота — в разделе <a href="#" data-goto="prompt">Промпт</a>. Оформление чата для клиентов — ниже. Ограничения аккаунта отображаются ниже и редактируются в разделе «Пользователи».</p>';
+        html += '<form id="profileForm" class="panel profile-form">';
+        html += '<div class="form-row profile-user-id"><strong>user_id:</strong> ' + escapeHtml(p.user_id || '') + '</div>';
+        html += '<div class="form-row"><label for="profileDisplayName">Имя (отображается в кабинете)</label><input type="text" id="profileDisplayName" value="' + escapeHtml(p.display_name || '') + '" maxlength="256"></div>';
+        html += '<div class="form-row"><label for="profileContact">Контакт (email / телефон / мессенджер)</label><input type="text" id="profileContact" value="' + escapeHtml(p.contact || '') + '" maxlength="256"></div>';
+        var telegramUrl = (p.telegram_webhook_url || '').trim();
+        html += '<div class="form-row"><label>Ссылка для Telegram (webhook)</label>';
+        html += '<div class="profile-telegram-row"><input type="text" id="profileTelegramWebhookUrl" readonly value="' + escapeHtml(telegramUrl) + '" class="profile-telegram-url-input"><button type="button" id="profileCopyTelegramBtn" class="btn-copy-telegram">Копировать</button></div>';
+        html += '<p class="hint" style="margin-top:0.35rem;">Укажите эту ссылку в setWebhook для вашего бота. Ниже задайте токен бота (от @BotFather), чтобы чат мог отвечать в Telegram.</p></div>';
+        var tokenPlaceholder = p.telegram_bot_token_set ? 'Введите новый токен, чтобы заменить' : 'Оставьте пустым, чтобы не менять';
+        var tokenSetHint = p.telegram_bot_token_set ? ' <span class="hint" style="color:var(--success);">Токен задан</span>' : '';
+        html += '<div class="form-row"><label for="profileTelegramBotToken">Токен бота Telegram (от BotFather)</label><input type="password" id="profileTelegramBotToken" value="" placeholder="' + tokenPlaceholder + '" maxlength="256" autocomplete="off">' + tokenSetHint + '</div>';
+        html += '<div class="form-row"><label>Цветовая гамма чата бота</label><div class="theme-options" id="profileThemeOptions">';
+        CHAT_THEMES.forEach(function(t) {
+          var sel = t.id === currentTheme ? ' selected' : '';
+          html += '<label class="theme-option' + sel + '" data-theme="' + escapeHtml(t.id) + '"><input type="radio" name="chat_theme" value="' + escapeHtml(t.id) + '"' + (t.id === currentTheme ? ' checked' : '') + ' style="display:none"><span class="swatch" style="background:' + t.color + '"></span>' + escapeHtml(t.name) + '</label>';
+        });
+        html += '</div></div>';
+        html += '<div class="form-row"><label>Быстрые кнопки подсказок (под полем ввода в чате)</label><ul class="quick-buttons-list" id="profileQuickButtonsList"></ul><button type="button" class="btn-add-quick" id="profileAddQuickBtn">Добавить кнопку</button></div>';
+        html += '<div class="form-row" style="margin-top:1rem;"><button type="submit">Сохранить профиль</button></div>';
+        html += '</form>';
+        // Блок с ограничениями (только просмотр)
+        const limits = {
+          chat_max_user_message_chars: p.chat_max_user_message_chars,
+          user_prompt_max_chars: p.user_prompt_max_chars,
+          rag_max_documents: p.rag_max_documents,
+          gallery_max_groups: p.gallery_max_groups,
+          gallery_max_images_per_group: p.gallery_max_images_per_group
+        };
+        html += '<div class="panel" style="margin-top:1.5rem;"><h3 style="margin-top:0;">Ограничения аккаунта</h3>';
+        html += '<p class="hint">Настраиваются админом в разделе «Пользователи».</p><ul class="list">';
+        html += '<li>Максимальная длина сообщения в чате: <strong>' + escapeHtml(String(limits.chat_max_user_message_chars || 500)) + '</strong> символов</li>';
+        html += '<li>Максимальная длина промпта бота: <strong>' + escapeHtml(String(limits.user_prompt_max_chars || 10000)) + '</strong> символов</li>';
+        html += '<li>Максимальное количество документов RAG: <strong>' + escapeHtml(String(limits.rag_max_documents || 3)) + '</strong></li>';
+        html += '<li>Максимальное количество галерей: <strong>' + escapeHtml(String(limits.gallery_max_groups || 3)) + '</strong></li>';
+        html += '<li>Максимальное количество изображений в галерее: <strong>' + escapeHtml(String(limits.gallery_max_images_per_group || 3)) + '</strong></li>';
+        html += '</ul></div>';
+        document.getElementById('content').innerHTML = html;
+
+        var listEl = document.getElementById('profileQuickButtonsList');
+        function renderQuickRows() {
+          var items = listEl.querySelectorAll('.quick-row');
+          items.forEach(function(row) {
+            var inp = row.querySelector('input');
+            if (inp && inp.value.trim() === '' && items.length > 1) row.remove();
+          });
+          items = listEl.querySelectorAll('.quick-row');
+          items.forEach(function(row, i) {
+            var inp = row.querySelector('input');
+            if (!inp) return;
+            quickButtons[i] = inp.value.trim();
+          });
+        }
+        function addQuickRow(value) {
+          var li = document.createElement('li');
+          li.className = 'quick-row';
+          li.innerHTML = '<input type="text" maxlength="120" placeholder="Текст кнопки" value="' + escapeHtml(value || '') + '"><button type="button" class="btn-remove">Удалить</button>';
+          li.querySelector('.btn-remove').onclick = function() { li.remove(); };
+          listEl.appendChild(li);
+        }
+        if (quickButtons.length === 0) quickButtons.push('');
+        quickButtons.forEach(function(t) { addQuickRow(t); });
+        document.getElementById('profileAddQuickBtn').onclick = function() { addQuickRow(''); };
+
+        var copyTelegramBtn = document.getElementById('profileCopyTelegramBtn');
+        var telegramUrlInput = document.getElementById('profileTelegramWebhookUrl');
+        if (copyTelegramBtn && telegramUrlInput) {
+          copyTelegramBtn.addEventListener('click', function() {
+            var url = (telegramUrlInput.value || '').trim();
+            if (!url) { alert('Ссылка для Telegram не задана. Настройте PUBLIC_API_BASE_URL или FRONTEND_BASE_URL на сервере.'); return; }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(url).then(function() {
+                var t = copyTelegramBtn.textContent;
+                copyTelegramBtn.textContent = 'Скопировано';
+                setTimeout(function() { copyTelegramBtn.textContent = t; }, 2000);
+              }).catch(function() { alert('Не удалось скопировать'); });
+            } else {
+              telegramUrlInput.select();
+              try { document.execCommand('copy'); copyTelegramBtn.textContent = 'Скопировано'; setTimeout(function() { copyTelegramBtn.textContent = 'Копировать'; }, 2000); } catch (e) { alert('Скопируйте ссылку вручную'); }
+            }
+          });
+        }
+
+        document.getElementById('profileThemeOptions').querySelectorAll('.theme-option').forEach(function(el) {
+          el.addEventListener('click', function() {
+            document.getElementById('profileThemeOptions').querySelectorAll('.theme-option').forEach(function(o) { o.classList.remove('selected'); });
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+          });
+        });
+
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var quickArr = [];
+          listEl.querySelectorAll('.quick-row input').forEach(function(inp) {
+            var v = (inp.value || '').trim();
+            if (v) quickArr.push(v);
+          });
+          var tokenVal = (document.getElementById('profileTelegramBotToken') || {}).value || '';
+          const body = {
+            display_name: document.getElementById('profileDisplayName').value.trim() || null,
+            contact: document.getElementById('profileContact').value.trim() || null,
+            chat_theme: (form.querySelector('input[name="chat_theme"]:checked') || {}).value || 'cyan',
+            quick_reply_buttons: quickArr.length ? quickArr : null
+          };
+          if (tokenVal.trim()) body.telegram_bot_token = tokenVal.trim();
+          const res = await fetch(base + '/' + tenantId + '/me/profile', {
+            method: 'PATCH',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, headers(true)),
+            body: JSON.stringify(body)
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            alert(data.detail || 'Ошибка сохранения профиля');
+            return;
+          }
+          alert('Профиль сохранён.');
+          loadProfile();
+        });
+      }
+
+      async function loadMy() {
+        if (!requireAuth()) return;
+        await ensureTenant();
+        const r = await fetch(base + '/' + tenantId + '/me/embed', { headers: headers() });
+        if (!r.ok) {
+          document.getElementById('content').innerHTML = '<p class="error">Ошибка загрузки.</p>';
+          return;
+        }
+        const data = await r.json();
+        const codeInline = (data.iframe_code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const codePopup = (data.popup_code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById('content').innerHTML =
+          '<h2>Главная</h2>' +
+          '<p class="hint">Тестируйте бота в чате и скопируйте код для вставки на сайт.</p>' +
+          '<div class="main-page-wrap">' +
+          '<div class="main-page-chat">' +
+          '<p class="hint" style="margin-bottom:0.5rem;">Чат для теста (режим теста — в БД не сохраняется, но помнит 10 последних сообщений)</p>' +
+          '<iframe id="chatEmbedFrame" class="chat-frame" src="/' + tenantSlug + '/chat/embed" title="Чат для теста"></iframe>' +
+          '</div>' +
+          '<div class="main-page-embed">' +
+          '<p class="hint" style="margin-bottom:0.5rem;">Вставка на ваш сайт</p>' +
+          '<p class="hint" style="margin-top:0.25rem;margin-bottom:0.25rem;"><strong>Вариант 1.</strong> Встроенный блок чата (iframe в макете страницы).</p>' +
+          '<pre class="embed-code" id="embedCodeInline">' + codeInline + '</pre>' +
+          '<div class="embed-actions" style="margin-bottom:1rem;"><button type="button" id="copyEmbedInlineBtn">Копировать код (встроенный)</button></div>' +
+          '<p class="hint" style="margin-top:0.25rem;margin-bottom:0.25rem;"><strong>Вариант 2.</strong> Всплывающее окно по кнопке (чат открывается поверх страницы).</p>' +
+          '<pre class="embed-code" id="embedCodePopup">' + codePopup + '</pre>' +
+          '<div class="embed-actions"><button type="button" id="copyEmbedPopupBtn">Копировать код (всплывающее окно)</button></div>' +
+          '</div>' +
+          '</div>';
+        var frame = document.getElementById('chatEmbedFrame');
+        if (frame) {
+          frame.addEventListener('load', function() {
+            try {
+              var uid = localStorage.getItem('cip_user_id');
+              var token = localStorage.getItem('cip_access_token');
+              if (uid && token) {
+                // Боевой чат (как на сайте клиента) — не передаём is_test, чтобы использовался боевой промпт
+                frame.contentWindow.postMessage({ type: 'cip_auth', user_id: uid, token: token, is_test: false }, window.location.origin);
+              }
+            } catch (_) {}
+          });
+        }
+        function copyToClipboard(text, okMessage) {
+          if (!text) { alert('Нет кода для копирования.'); return; }
+          function fallbackCopy() {
+            try {
+              var ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.position = 'fixed';
+              ta.style.top = '-9999px';
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              var ok = document.execCommand('copy');
+              document.body.removeChild(ta);
+              alert(ok ? okMessage : 'Не удалось скопировать.');
+            } catch (_) {
+              alert('Не удалось скопировать.');
+            }
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function() {
+              alert(okMessage);
+            }).catch(function() {
+              fallbackCopy();
+            });
+          } else {
+            fallbackCopy();
+          }
+        }
+        var copyInlineBtn = document.getElementById('copyEmbedInlineBtn');
+        if (copyInlineBtn) {
+          copyInlineBtn.addEventListener('click', function() {
+            var pre = document.getElementById('embedCodeInline');
+            var text = pre ? pre.textContent : '';
+            copyToClipboard(text, 'Код (встроенный чат) скопирован в буфер обмена.');
+          });
+        }
+        var copyPopupBtn = document.getElementById('copyEmbedPopupBtn');
+        if (copyPopupBtn) {
+          copyPopupBtn.addEventListener('click', function() {
+            var pre = document.getElementById('embedCodePopup');
+            var text = pre ? pre.textContent : '';
+            copyToClipboard(text, 'Код (всплывающее окно) скопирован в буфер обмена.');
+          });
+        }
+      }
+
+      var usersPageSize = 20;
+      var usersPage = 0;
+      var usersTotal = 0;
+      var usersSearch = '';
+
+      async function loadUsers(page, searchChange) {
+        if (page !== undefined) usersPage = page;
+        if (searchChange === true) usersPage = 0;
+        if (!requireAuth()) return;
+        await ensureTenant();
+        var offset = usersPage * usersPageSize;
+        var url = base + '/' + tenantId + '/me/admin/tenants?limit=' + usersPageSize + '&offset=' + offset;
+        if (usersSearch) url += '&search=' + encodeURIComponent(usersSearch);
+        const rAdmin = await fetch(url, { headers: headers() });
+        if (rAdmin.status === 403) {
+          document.getElementById('content').innerHTML = renderAdminOnlyError('Пользователи');
+          return;
+        }
+        if (!rAdmin.ok) {
+          const data = await rAdmin.json().catch(() => ({}));
+          document.getElementById('content').innerHTML = '<p class="error">' + escapeHtml(data.detail || 'Ошибка загрузки.') + '</p>';
+          return;
+        }
+        const data = await rAdmin.json();
+        const tenants = data.items || [];
+        usersTotal = data.total || 0;
+        let html = '<h2>Пользователи</h2>';
+        html += '<p class="hint">Тенанты и их ограничения. Выберите тенант и нажмите «Изменить», чтобы изменить ограничения. Заблокированный тенант не может войти в кабинет.</p>';
+        html += '<div class="panel"><div class="users-search-row"><label for="usersSearchInput">Поиск по тенанту:</label> ';
+        html += '<input type="text" id="usersSearchInput" placeholder="slug или название..." value="' + escapeHtml(usersSearch) + '" style="max-width:220px; padding:0.35rem 0.5rem;"> ';
+        html += '<button type="button" id="usersSearchBtn">Найти</button></div>';
+        html += '<div class="limits-table-wrap"><table class="limits-table"><thead><tr>';
+        html += '<th>Тенант (slug)</th><th>Название</th><th>Блок</th>';
+        html += '<th>Симв. чата</th><th>Промпт</th><th>RAG док.</th><th>Галерей</th><th>Фото в галерее</th>';
+        html += '<th>Действие</th></tr></thead><tbody>';
+        for (var i = 0; i < tenants.length; i++) {
+          var t = tenants[i];
+          var blocked = !!(t.blocked === true || t.blocked === 'true');
+          html += '<tr class="' + (blocked ? 'row-blocked ' : '') + '" data-tenant-id="' + escapeHtml(t.id) + '" data-tenant-slug="' + escapeHtml(t.slug || '') + '" data-blocked="' + (blocked ? '1' : '0') + '">';
+          html += '<td>' + escapeHtml(t.slug || '') + '</td><td>' + escapeHtml(t.name || '') + '</td>';
+          html += '<td>' + (blocked ? 'Да' : 'Нет') + '</td>';
+          html += '<td>' + escapeHtml(String(t.chat_max_user_message_chars ?? 500)) + '</td>';
+          html += '<td>' + escapeHtml(String(t.user_prompt_max_chars ?? 10000)) + '</td>';
+          html += '<td>' + escapeHtml(String(t.rag_max_documents ?? 3)) + '</td>';
+          html += '<td>' + escapeHtml(String(t.gallery_max_groups ?? 3)) + '</td>';
+          html += '<td>' + escapeHtml(String(t.gallery_max_images_per_group ?? 3)) + '</td>';
+          html += '<td class="actions-cell"><div class="actions-btns">';
+          html += '<button type="button" class="btn-open-tenant" title="Перейти в тенант" data-tenant-id="' + escapeHtml(t.id) + '" data-tenant-slug="' + escapeHtml(t.slug || '') + '">&#8594;</button>';
+          html += '<button type="button" class="btn-block' + (blocked ? ' btn-blocked' : '') + '" title="' + (blocked ? 'Разблокировать' : 'Заблокировать') + '" aria-label="' + (blocked ? 'Разблокировать' : 'Заблокировать') + '" data-blocked="' + (blocked ? '1' : '0') + '">' + (blocked ? '\uD83D\uDD13' : '\uD83D\uDD12') + '</button>';
+          html += '<button type="button" class="btn-edit-limits" title="Изменить ограничения">&#9998;</button></div></td></tr>';
+        }
+        html += '</tbody></table></div>';
+        var from = offset + 1;
+        var to = Math.min(offset + tenants.length, usersTotal);
+        html += '<div class="pagination">';
+        if (usersPage > 0) html += '<button type="button" id="usersPrev">← Назад</button> ';
+        html += ' <span>Показано ' + from + '–' + to + ' из ' + usersTotal + '</span>';
+        if (offset + tenants.length < usersTotal) html += ' <button type="button" id="usersNext">Вперёд →</button>';
+        html += '</div>';
+        html += '<div id="limitsEditPanel" class="limits-edit-panel">';
+        html += '<h3 style="margin-top:0;" id="limitsEditTitle">Ограничения тенанта</h3>';
+        html += '<form id="limitsForm"><input type="hidden" id="limitsTargetTenantId" value="">';
+        html += '<div class="form-row"><label>Длина сообщения в чате (только просмотр)</label>';
+        html += '<input type="number" id="limitChatChars" disabled></div>';
+        html += '<div class="form-row"><label for="limitUserPrompt">Макс. длина промпта бота (симв.)</label>';
+        html += '<input type="number" id="limitUserPrompt" min="1" max="100000"></div>';
+        html += '<div class="form-row"><label for="limitRagDocs">Макс. документов RAG</label>';
+        html += '<input type="number" id="limitRagDocs" min="1" max="100"></div>';
+        html += '<div class="form-row"><label for="limitGalleryGroups">Макс. галерей</label>';
+        html += '<input type="number" id="limitGalleryGroups" min="1" max="100"></div>';
+        html += '<div class="form-row"><label for="limitGalleryImages">Макс. фото в галерее</label>';
+        html += '<input type="number" id="limitGalleryImages" min="1" max="100"></div>';
+        html += '<div class="form-row" style="margin-top:1rem;"><button type="submit">Сохранить ограничения</button> ';
+        html += '<button type="button" id="limitsEditCancel">Отмена</button></div></form></div></div>';
+        document.getElementById('content').innerHTML = html;
+
+        document.getElementById('usersPrev') && document.getElementById('usersPrev').addEventListener('click', function() { loadUsers(usersPage - 1); });
+        document.getElementById('usersNext') && document.getElementById('usersNext').addEventListener('click', function() { loadUsers(usersPage + 1); });
+        var searchInput = document.getElementById('usersSearchInput');
+        var searchBtn = document.getElementById('usersSearchBtn');
+        if (searchInput) searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { usersSearch = searchInput.value.trim(); loadUsers(0, true); } });
+        if (searchBtn) searchBtn.addEventListener('click', function() { usersSearch = (searchInput && searchInput.value.trim()) || ''; loadUsers(0, true); });
+
+        document.querySelectorAll('.limits-table .btn-open-tenant').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            var targetId = btn.getAttribute('data-tenant-id');
+            var slug = btn.getAttribute('data-tenant-slug');
+            if (!slug) return;
+            try {
+              var r = await fetch(base + '/' + tenantId + '/me/admin/tenants/' + targetId + '/impersonate', { headers: headers() });
+              var data = await r.json().catch(function() { return {}; });
+              if (!r.ok) { alert(data.detail || 'Не удалось получить доступ'); return; }
+              var ticket = data.ticket;
+              if (!ticket) { alert('Нет билета'); return; }
+              var url = '/' + slug + '/my?ticket=' + encodeURIComponent(ticket);
+              window.open(url, '_blank', 'noopener,noreferrer');
+            } catch (e) { alert('Ошибка: ' + (e.message || e)); }
+          });
+        });
+
+        document.querySelectorAll('.limits-table .btn-block').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            var row = btn.closest('tr');
+            var targetId = row.getAttribute('data-tenant-id');
+            var currentlyBlocked = row.getAttribute('data-blocked') === '1';
+            var newBlocked = !currentlyBlocked;
+            if (!confirm(newBlocked ? 'Заблокировать тенант? Пользователь не сможет войти в кабинет.' : 'Разблокировать тенант?')) return;
+            var res = await fetch(base + '/' + tenantId + '/me/admin/tenants/' + targetId + '/block', {
+              method: 'PATCH',
+              headers: Object.assign({ 'Content-Type': 'application/json' }, headers(true)),
+              body: JSON.stringify({ blocked: newBlocked })
+            });
+            var data = await res.json().catch(() => ({}));
+            if (!res.ok) { alert(data.detail || 'Ошибка'); return; }
+            loadUsers();
+          });
+        });
+
+        document.querySelectorAll('.limits-table .btn-edit-limits').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var row = btn.closest('tr');
+            var tid = row.getAttribute('data-tenant-id');
+            var slug = row.getAttribute('data-tenant-slug');
+            var cells = row.querySelectorAll('td');
+            document.getElementById('limitsTargetTenantId').value = tid;
+            document.getElementById('limitsEditTitle').textContent = 'Ограничения тенанта: ' + (slug || tid);
+            document.getElementById('limitChatChars').value = cells[3] ? cells[3].textContent : 500;
+            document.getElementById('limitUserPrompt').value = cells[4] ? cells[4].textContent : 10000;
+            document.getElementById('limitRagDocs').value = cells[5] ? cells[5].textContent : 3;
+            document.getElementById('limitGalleryGroups').value = cells[6] ? cells[6].textContent : 3;
+            document.getElementById('limitGalleryImages').value = cells[7] ? cells[7].textContent : 3;
+            document.getElementById('limitsEditPanel').classList.add('visible');
+          });
+        });
+        document.getElementById('limitsEditCancel').addEventListener('click', function() {
+          document.getElementById('limitsEditPanel').classList.remove('visible');
+        });
+        document.getElementById('limitsForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var targetId = document.getElementById('limitsTargetTenantId').value;
+          if (!targetId) return;
+          var body = {
+            user_prompt_max_chars: Number(document.getElementById('limitUserPrompt').value) || null,
+            rag_max_documents: Number(document.getElementById('limitRagDocs').value) || null,
+            gallery_max_groups: Number(document.getElementById('limitGalleryGroups').value) || null,
+            gallery_max_images_per_group: Number(document.getElementById('limitGalleryImages').value) || null
+          };
+          var res = await fetch(base + '/' + tenantId + '/me/admin/tenants/' + targetId + '/limits', {
+            method: 'PATCH',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, headers(true)),
+            body: JSON.stringify(body)
+          });
+          var data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            alert(data.detail || 'Ошибка сохранения ограничений');
+            return;
+          }
+          alert('Ограничения сохранены.');
+          document.getElementById('limitsEditPanel').classList.remove('visible');
+          loadUsers();
+        });
+      }
+
+      function route() {
+        const segs = window.location.pathname.split('/').filter(Boolean);
+        const page = segs[2] || 'my';
+        setLinks();
+        renderAuthLinks();
+        ensureAdminFlag();
+        if (page === 'my' || page === 'embed') loadMy();
+        else if (page === 'dialogs' && segs[3]) loadDialogDetail(segs[3]);
+        else if (page === 'dialogs') loadDialogs();
+        else if (page === 'prompt') loadUserPrompt();
+        else if (page === 'admin-prompt') loadAdminPrompt();
+        else if (page === 'gallery' && segs[3]) loadGalleryGroup(segs[3]);
+        else if (page === 'gallery') loadGallery();
+        else if (page === 'rag') loadRag();
+        else if (page === 'mcp-servers') loadMcpServers();
+        else if (page === 'leads') loadLeads();
+        else if (page === 'users') loadUsers();
+        else if (page === 'profile') loadProfile();
+        else loadMy();
+      }
+
+      document.querySelectorAll('nav a[data-page]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = a.getAttribute('data-page');
+          window.history.pushState({}, '', '/' + tenantSlug + (page === 'my' ? '/my' : '/my/' + page));
+          route();
+        });
+      });
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[data-goto]');
+        if (!a) return;
+        e.preventDefault();
+        const page = a.getAttribute('data-goto');
+        window.history.pushState({}, '', '/' + tenantSlug + (page === 'my' ? '/my' : '/my/' + page));
+        route();
+      });
+      window.onpopstate = route;
+      route();
+    })();
+  </script>
+</body>
+</html>

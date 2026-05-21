@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Чат</title>
+  <style>
+    * { box-sizing: border-box; }
+    body.chat-theme-cyan { --chat-accent: #00acc1; --chat-accent-hover: #0097a7; }
+    body.chat-theme-blue { --chat-accent: #1976d2; --chat-accent-hover: #1565c0; }
+    body.chat-theme-green { --chat-accent: #2e7d32; --chat-accent-hover: #1b5e20; }
+    body.chat-theme-purple { --chat-accent: #7b1fa2; --chat-accent-hover: #6a1b9a; }
+    body.chat-theme-orange { --chat-accent: #e65100; --chat-accent-hover: #bf360c; }
+    body.chat-theme-teal { --chat-accent: #00695c; --chat-accent-hover: #004d40; }
+    html.chat-embed, body.chat-embed {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body {
+      margin: 0;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 50%);
+      background-attachment: fixed;
+    }
+    .chat-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 80vh;
+    }
+    body.chat-embed .chat-card {
+      max-width: none;
+      margin: 0;
+      min-height: 0;
+      height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    #messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .msg {
+      padding: 0.75rem 1rem;
+      border-radius: 16px;
+      max-width: 85%;
+      line-height: 1.45;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      font-size: 0.775rem;
+      min-width: 0;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: #f0f0f0;
+      color: #333;
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--chat-accent, #00acc1);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistant a {
+      color: #0277bd;
+      text-decoration: none;
+    }
+    .msg.assistant a:hover { text-decoration: underline; }
+    .typing-dots { display: inline-flex; gap: 2px; align-items: center; }
+    .typing-dots span {
+      animation: typing-dot 1.2s ease-in-out infinite;
+      opacity: 0.4;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes typing-dot {
+      0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-2px); }
+    }
+    .input-area {
+      flex-shrink: 0;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+    .input-hint {
+      font-size: 0.8rem;
+      color: #999;
+      margin-bottom: 0.5rem;
+    }
+    .quick-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .pill {
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      border: 1px solid var(--chat-accent, #00acc1);
+      background: #fff;
+      color: var(--chat-accent, #00acc1);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .pill:hover {
+      background: var(--chat-accent, #00acc1);
+      color: #fff;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    #input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ddd;
+      border-radius: 24px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #input:focus { border-color: var(--chat-accent, #00acc1); }
+    #send {
+      flex-shrink: 0;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 24px;
+      background: var(--chat-accent, #00acc1);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #send:hover { background: var(--chat-accent-hover, #0097a7); }
+    #send:disabled { opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="chat-card">
+    <div id="messages"></div>
+
+    <div class="input-area">
+      <p class="input-hint" id="inputHint">Напишите сообщение или выберите подсказку</p>
+      <div class="quick-pills" id="quickPills"></div>
+      <form id="form" class="input-row">
+        <input id="input" type="text" placeholder="Сообщение..." autocomplete="off">
+        <button type="submit" id="send">Отправить</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const path = window.location.pathname;
+      const slugMatch = path.match(/^\/([^/]+)\/chat(?:\/embed)?\/?$/);
+      const tenantSlug = slugMatch ? slugMatch[1] : null;
+      if (!tenantSlug) {
+        document.getElementById('messages').innerHTML = '<p style="padding:1rem">Неверный URL. Ожидается /{tenant_slug}/chat или /{tenant_slug}/chat/embed</p>';
+        return;
+      }
+      if (path.indexOf('/embed') !== -1) {
+        document.documentElement.classList.add('chat-embed');
+        document.body.classList.add('chat-embed');
+      }
+
+      let tenantId = null;
+      let chatMaxUserMessageChars = 500;
+      let tenantName = '';
+      let userId = localStorage.getItem('cip_user_id') || 'anon-' + Math.random().toString(36).slice(2, 12);
+      localStorage.setItem('cip_user_id', userId);
+      let dialogId = null;
+      let isTestMode = false;
+      var welcomePending = null;
+      var welcomeTimeoutId = null;
+
+      window.addEventListener('message', function(event) {
+        if (event.origin !== window.location.origin) return;
+        if (event.data && event.data.type === 'cip_auth' && event.data.user_id && event.data.token) {
+          userId = event.data.user_id;
+          localStorage.setItem('cip_user_id', userId);
+          localStorage.setItem('cip_access_token', event.data.token);
+          if (event.data.is_test === true) {
+            isTestMode = true;
+            if (welcomePending) { clearTimeout(welcomeTimeoutId); welcomePending(); welcomePending = null; }
+          }
+        }
+      });
+
+      function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      /** Допустимые теги для блоков [HTML]...[/HTML] в ответах бота. */
+      var ALLOWED_HTML_TAGS = /^(p|div|span|br|strong|b|em|i|u|ul|ol|li|a|img|table|thead|tbody|tr|td|th|h1|h2|h3|h4)$/i;
+      var HTML_BLOCK_RE = /\[HTML\]([\s\S]*?)\[\/HTML\]/gi;
+      var ALLOWED_STYLE_PROPS = /^(color|background-color|background|font-weight|font-style|font-size|text-align|margin|margin-top|margin-bottom|margin-left|margin-right|padding|padding-top|padding-bottom|padding-left|padding-right|display|width|height|max-width|border|border-radius|list-style-type|text-decoration|line-height)$/i;
+      var DANGEROUS_STYLE = /expression\s*\(|javascript\s*:|url\s*\(\s*["']?\s*javascript|behavior\s*:|@import|-moz-binding/i;
+
+      function sanitizeStyleValue(value) {
+        if (!value || typeof value !== 'string') return '';
+        var out = [];
+        var parts = value.split(';');
+        for (var i = 0; i < parts.length; i++) {
+          var part = parts[i].trim();
+          var colon = part.indexOf(':');
+          if (colon <= 0) continue;
+          var prop = part.slice(0, colon).trim().toLowerCase();
+          var val = part.slice(colon + 1).trim();
+          if (DANGEROUS_STYLE.test(val)) continue;
+          if (ALLOWED_STYLE_PROPS.test(prop)) out.push(prop + ':' + val);
+        }
+        return out.join('; ');
+      }
+
+      function sanitizeHtmlForChat(raw) {
+        if (!raw || typeof raw !== 'string') return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = raw.trim();
+        [].slice.call(tmp.querySelectorAll('script, iframe, form, object, embed, style')).forEach(function(el) { el.remove(); });
+        tmp.querySelectorAll('*').forEach(function(el) {
+          if (!ALLOWED_HTML_TAGS.test(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent)); return; }
+          for (var i = el.attributes.length - 1; i >= 0; i--) {
+            var a = el.attributes[i];
+            if (/^on/i.test(a.name)) el.removeAttribute(a.name);
+            else if (el.tagName === 'A' && (a.name === 'href' || a.name === 'target' || a.name === 'rel')) { /* keep */ }
+            else if (el.tagName === 'IMG' && (a.name === 'src' || a.name === 'alt' || a.name === 'loading')) { /* keep */ }
+            else if (a.name === 'style') {
+              var safe = sanitizeStyleValue(a.value);
+              if (safe) el.setAttribute('style', safe); else el.removeAttribute('style');
+            } else if (a.name !== 'href' && a.name !== 'src' && a.name !== 'alt' && a.name !== 'target' && a.name !== 'rel' && a.name !== 'loading') el.removeAttribute(a.name);
+          }
+          if (el.tagName === 'A') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+        });
+        return tmp.innerHTML;
+      }
+
+      /** Разбивает текст на сегменты [HTML]...[/HTML] и обычный текст. Только [HTML]-блоки рендерятся как HTML (после санитизации), остальное — экранированный текст. */
+      function processHtmlBlocksAndText(text) {
+        var parts = [];
+        var lastIndex = 0;
+        HTML_BLOCK_RE.lastIndex = 0;
+        var m;
+        while ((m = HTML_BLOCK_RE.exec(text)) !== null) {
+          if (m.index > lastIndex) {
+            var textSegment = text.slice(lastIndex, m.index);
+            var lines = textSegment.split('\n');
+            parts.push(lines.map(function(l) { return escapeHtml((l || '').trim()); }).join('<br>'));
+          }
+          parts.push(sanitizeHtmlForChat(m[1]));
+          lastIndex = HTML_BLOCK_RE.lastIndex;
+        }
+        if (lastIndex < text.length) {
+          var rest = text.slice(lastIndex);
+          var lines = rest.split('\n');
+          parts.push(lines.map(function(l) { return escapeHtml((l || '').trim()); }).join('<br>'));
+        }
+        return parts.join('');
+      }
+
+      function addMsg(role, text) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + role;
+        if (role === 'assistant') {
+          div.innerHTML = processHtmlBlocksAndText(text) || '—';
+        } else {
+          div.textContent = text;
+        }
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function renderPills(suggestions) {
+        const el = document.getElementById('quickPills');
+        el.innerHTML = '';
+        (suggestions || []).forEach(s => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pill';
+          b.textContent = s;
+          b.addEventListener('click', () => {
+            document.getElementById('input').value = s;
+            document.getElementById('input').focus();
+          });
+          el.appendChild(b);
+        });
+      }
+
+      function applyChatTheme(themeId) {
+        document.body.classList.remove('chat-theme-cyan', 'chat-theme-blue', 'chat-theme-green', 'chat-theme-purple', 'chat-theme-orange', 'chat-theme-teal');
+        if (themeId) document.body.classList.add('chat-theme-' + themeId);
+        else document.body.classList.add('chat-theme-cyan');
+      }
+
+      async function init() {
+        const r = await fetch('/api/v1/tenants/by-slug/' + encodeURIComponent(tenantSlug));
+        if (!r.ok) {
+          addMsg('assistant', 'Тенант не найден.');
+          return;
+        }
+        const t = await r.json();
+        tenantId = t.id;
+        tenantName = t.name || 'Сайт';
+        if (typeof t.chat_max_user_message_chars === 'number' && t.chat_max_user_message_chars > 0) {
+          chatMaxUserMessageChars = t.chat_max_user_message_chars;
+        }
+        applyChatTheme(t.chat_theme || 'cyan');
+        var suggestions = Array.isArray(t.quick_reply_buttons) && t.quick_reply_buttons.length ? t.quick_reply_buttons : ['Расскажи о вас', 'Какие услуги?', 'Контакты'];
+        renderPills(suggestions);
+        // Приветствие: даём время на postMessage (is_test) от родителя; при получении is_test запрашиваем сразу с тестовым промптом
+        (function() {
+          var welcomeDone = false;
+          function fetchWelcome() {
+            if (welcomeDone) return;
+            welcomeDone = true;
+            welcomePending = null;
+            var url = '/api/v1/tenants/' + tenantId + '/chat/welcome';
+            if (isTestMode) url += '?is_test=true';
+            fetch(url).then(function(wr) { return wr.ok ? wr.json() : null; }).then(function(wdata) {
+              if (wdata && wdata.message) addMsg('assistant', wdata.message);
+            }).catch(function() {});
+          }
+          welcomePending = fetchWelcome;
+          welcomeTimeoutId = setTimeout(fetchWelcome, 200);
+        })();
+      }
+
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
+      const sendBtn = document.getElementById('send');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text || !tenantId) return;
+        if (text.length > chatMaxUserMessageChars) {
+          alert('Сообщение слишком длинное. Максимум ' + chatMaxUserMessageChars + ' символов.');
+          return;
+        }
+        input.value = '';
+        addMsg('user', text);
+        sendBtn.disabled = true;
+        const assistantEl = document.createElement('div');
+        assistantEl.className = 'msg assistant';
+        assistantEl.innerHTML = '<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+        document.getElementById('messages').appendChild(assistantEl);
+        assistantEl.scrollIntoView({ behavior: 'smooth' });
+        let full = '';
+        try {
+          const body = { user_id: userId, message: text };
+          if (dialogId) body.dialog_id = dialogId;
+          if (isTestMode) body.is_test = true;
+          const headers = { 'Content-Type': 'application/json' };
+          const token = localStorage.getItem('cip_access_token');
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+          const res = await fetch('/api/v1/tenants/' + tenantId + '/chat', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            assistantEl.textContent = 'Ошибка: ' + (err.detail || res.status);
+            return;
+          }
+
+          const reader = res.body.getReader();
+          const dec = new TextDecoder();
+          var sseBuffer = '';
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            sseBuffer += dec.decode(value, { stream: true });
+            var endIdx;
+            while ((endIdx = sseBuffer.indexOf('\n\n')) >= 0) {
+              var eventBlock = sseBuffer.slice(0, endIdx);
+              sseBuffer = sseBuffer.slice(endIdx + 2);
+              var eventLines = eventBlock.split('\n');
+              for (var ei = 0; ei < eventLines.length; ei++) {
+                var line = eventLines[ei];
+                if (line.startsWith('data: ')) {
+                  var data = line.slice(6).trim();
+                  if (data === '[DONE]') break;
+                  try {
+                    var obj = JSON.parse(data);
+                    if (obj.content) full += obj.content;
+                    if (obj.error) assistantEl.textContent = 'Ошибка: ' + obj.error;
+                  } catch (_) {}
+                  break;
+                }
+              }
+            }
+          }
+
+          if (full) {
+            assistantEl.innerHTML = processHtmlBlocksAndText(full) || '—';
+            assistantEl.scrollIntoView({ behavior: 'smooth' });
+            if (!isTestMode) {
+              try {
+                const h = { 'X-User-Id': userId };
+                const token = localStorage.getItem('cip_access_token');
+                if (token) h['Authorization'] = 'Bearer ' + token;
+                const j = await fetch('/api/v1/tenants/' + tenantId + '/me/dialogs?limit=1', { headers: h }).then(r => r.json());
+                if (j.items && j.items[0]) dialogId = j.items[0].id;
+              } catch (_) {}
+            }
+          }
+        } catch (e) {
+          assistantEl.textContent = 'Ошибка: ' + (e.message || 'сеть');
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+
+      init();
+    })();
+  </script>
+</body>
+</html>

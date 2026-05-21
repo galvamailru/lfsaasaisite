@@ -1,0 +1,47 @@
+# Доступ боевого чата по Telegram (webhook)
+
+Единственный способ взаимодействия с Telegram — **webhook**: вы регистрируете у Telegram ссылку на наш POST-метод, Telegram при новых сообщениях шлёт туда POST, мы считаем ответ боевого чата и **отправляем его пользователю в Telegram** одним исходящим запросом к API Telegram (`sendMessage`). Для этого исходящего запроса системе нужен **токен бота** (иначе Telegram не примет отправку от имени бота).
+
+## Шаги
+
+1. **Создать бота** в [@BotFather](https://t.me/BotFather) (`/newbot`), сохранить **токен**.
+2. **В кабинете → Профиль:**
+   - В блоке **«Ссылка для Telegram (webhook)»** отображается URL вида  
+     `https://ВАШ_ДОМЕН/api/v1/tenants/by-slug/{slug}/telegram/webhook`  
+     (например `.../by-slug/u0cbbedb980f3/telegram/webhook`). Нажмите **«Копировать»**.
+   - В поле **«Токен бота Telegram»** вставьте токен от BotFather и нажмите **«Сохранить профиль»**.
+3. **Зарегистрировать webhook в Telegram:**  
+   В браузере или через curl (подставьте свой токен и скопированный URL):
+   ```text
+   https://api.telegram.org/bot<ВАШ_ТОКЕН>/setWebhook?url=<ВСТАВЬТЕ_СКОПИРОВАННУЮ_ССЫЛКУ>
+   ```
+   Пример:  
+   `https://api.telegram.org/bot123456:AAH.../setWebhook?url=https://your-domain.com/api/v1/tenants/by-slug/u0cbbedb980f3/telegram/webhook`
+4. Сервер должен быть доступен по **HTTPS** (для webhook Telegram принимает только HTTPS).
+
+После этого пользователи пишут боту в Telegram — ответы отдаёт тот же боевой чат (промпт, MCP, диалоги), что и на сайте.
+
+## Настройка сервера
+
+В `.env` задать **публичный URL API** (по нему Telegram шлёт POST):
+
+- **`PUBLIC_API_BASE_URL`** — например `https://your-domain.com` (без слэша в конце).  
+  Если не задан, используется **`FRONTEND_BASE_URL`**.
+
+Ссылка в профиле: `{PUBLIC_API_BASE_URL или FRONTEND_BASE_URL}/api/v1/tenants/by-slug/{slug}/telegram/webhook` (slug тенанта, например `u0cbbedb980f3`).
+
+## Что есть в бэкенде
+
+- **POST** `/api/v1/tenants/by-slug/{slug}/telegram/webhook` — точка входа для Telegram (slug тенанта, например `u0cbbedb980f3`). Эту ссылку показывает профиль кабинета.  
+  Telegram шлёт сюда POST с телом [Update](https://core.telegram.org/bots/api#update). Мы извлекаем текст сообщения, получаем ответ боевого чата и отправляем его в чат пользователю через вызов Telegram API `sendMessage` (используется сохранённый токен бота).  
+  Также доступен вариант по UUID: `POST .../tenants/{tenant_id}/telegram/webhook`.
+
+## Итог
+
+| Компонент | Статус |
+|-----------|--------|
+| Webhook POST | ✅ `POST .../telegram/webhook` |
+| Ссылка в профиле + «Копировать» | ✅ Профиль → «Ссылка для Telegram» |
+| Токен бота (для sendMessage) | ✅ Профиль → «Токен бота Telegram» |
+| Регистрация URL в Telegram | 🔲 вызвать `setWebhook?url=...` |
+| HTTPS | 🔲 обязателен |

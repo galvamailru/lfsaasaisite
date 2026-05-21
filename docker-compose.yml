@@ -1,0 +1,78 @@
+include:
+  - docker-compose.langfuse.yml
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-cip}:${POSTGRES_PASSWORD:-cip}@db:5432/${POSTGRES_DB:-cip}
+      - GALLERY_SERVICE_URL=http://gallery:8010
+      - RAG_SERVICE_URL=http://rag:8020
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_ENABLED=${LANGFUSE_ENABLED:-true}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-lfsaas-dev}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-lfsaas-dev}
+    depends_on:
+      db:
+        condition: service_healthy
+      gallery:
+        condition: service_started
+      rag:
+        condition: service_started
+      mailpit:
+        condition: service_started
+      langfuse-web:
+        condition: service_started
+    volumes:
+      - .:/app
+      - ./prompts:/app/prompts:ro
+      - ./logs:/app/logs
+
+  gallery:
+    build: ./services/gallery
+    ports:
+      - "8010:8010"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-cip}:${POSTGRES_PASSWORD:-cip}@db:5432/${POSTGRES_DB:-cip}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  rag:
+    build: ./services/rag
+    ports:
+      - "8020:8020"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-cip}:${POSTGRES_PASSWORD:-cip}@db:5432/${POSTGRES_DB:-cip}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cip}
+      POSTGRES_DB: ${POSTGRES_DB:-cip}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cip} -d ${POSTGRES_DB:-cip}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    # SMTP: 1025 (приложение шлёт сюда), Web UI: http://localhost:8025 (просмотр писем и ссылок подтверждения)
+
+volumes:
+  pgdata:
