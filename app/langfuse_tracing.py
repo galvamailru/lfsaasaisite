@@ -163,7 +163,11 @@ class ChatTrace:
                 metadata={"base_url": base_url, "method": method, "tool": tool_name},
             ) as span:
                 if error:
-                    span.update(input=_truncate(input_data), output=_truncate(error), level="ERROR")
+                    span.update(
+                        input=_truncate(input_data),
+                        output=_truncate(error),
+                        metadata={"error": "true"},
+                    )
                 else:
                     span.update(input=_truncate(input_data), output=_truncate(output))
         except Exception as e:
@@ -190,9 +194,11 @@ async def chat_trace_scope(
 
     from langfuse import propagate_attributes
 
-    meta = {**(metadata or {}), "chat_type": chat_type}
+    raw_meta = {**(metadata or {}), "chat_type": chat_type}
     if tenant_id:
-        meta["tenant_id"] = str(tenant_id)
+        raw_meta["tenant_id"] = str(tenant_id)
+    # LangFuse metadata — только строки (иначе ingestion может падать с 500)
+    meta = {k: str(v) for k, v in raw_meta.items()}
     user_id = str(tenant_id) if tenant_id else None
 
     trace = ChatTrace(disabled=False)
