@@ -25,6 +25,13 @@ from app.services.cabinet_service import get_tenant_by_slug
 app = FastAPI(title="CIP Backend", description="Chat + User Cabinet API")
 
 
+@app.on_event("startup")
+async def _langfuse_startup() -> None:
+    from app.langfuse_tracing import log_startup_status
+
+    log_startup_status()
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc: Exception):
     """В ответе 500 возвращаем текст ошибки для отладки."""

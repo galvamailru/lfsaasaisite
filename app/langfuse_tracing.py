@@ -1,19 +1,25 @@
-"""LangFuse: трассировка вызовов LLM (DeepSeek) и MCP без замены httpx."""
+"""LangFuse SDK v3: трассировка LLM (DeepSeek) и MCP. Совместимо с LangFuse server 3."""
 from __future__ import annotations
 
 import contextvars
 import json
+import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
 from app.config import settings
 
+_log = logging.getLogger("app.langfuse")
+
 _chat_trace_ctx: contextvars.ContextVar["ChatTrace | None"] = contextvars.ContextVar(
     "chat_trace", default=None
 )
 
-_langfuse_client = None
+
+def _base_url() -> str:
+    return (settings.langfuse_base_url or settings.langfuse_host or "").rstrip("/")
 
 
 def is_enabled() -> bool:
@@ -21,27 +27,44 @@ def is_enabled() -> bool:
         settings.langfuse_enabled
         and settings.langfuse_public_key.strip()
         and settings.langfuse_secret_key.strip()
-        and settings.langfuse_host.strip()
+        and _base_url()
     )
 
 
+def _sync_env_from_settings() -> None:
+    """get_client() читает LANGFUSE_* из окружения — синхронизируем с .env / compose."""
+    os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse_public_key.strip()
+    os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse_secret_key.strip()
+    os.environ["LANGFUSE_BASE_URL"] = _base_url()
+
+
 def get_client():
-    global _langfuse_client
     if not is_enabled():
         return None
-    if _langfuse_client is None:
-        from langfuse import Langfuse
+    try:
+        _sync_env_from_settings()
+        from langfuse import get_client as lf_get_client
 
-        _langfuse_client = Langfuse(
-            public_key=settings.langfuse_public_key.strip(),
-            secret_key=settings.langfuse_secret_key.strip(),
-            host=settings.langfuse_host.rstrip("/"),
-        )
-    return _langfuse_client
+        return lf_get_client()
+    except Exception as e:
+        _log.warning("LangFuse client init failed: %s", e)
+        return None
 
 
 def get_active_trace() -> "ChatTrace | None":
     return _chat_trace_ctx.get()
+
+
+def log_startup_status() -> None:
+    if not is_enabled():
+        _log.info(
+            "LangFuse tracing disabled (enabled=%s, host/base_url set=%s, keys set=%s)",
+            settings.langfuse_enabled,
+            bool(_base_url()),
+            bool(settings.langfuse_public_key and settings.langfuse_secret_key),
+        )
+        return
+    _log.info("LangFuse tracing enabled, base_url=%s", _base_url())
 
 
 def _truncate(value: Any, limit: int = 8000) -> Any:
@@ -58,47 +81,27 @@ def _truncate(value: Any, limit: int = 8000) -> Any:
     return s[:limit] + "…[truncated]"
 
 
+def _usage_details(usage: dict | None) -> dict | None:
+    if not usage:
+        return None
+    out: dict[str, int] = {}
+    if "prompt_tokens" in usage:
+        out["input"] = int(usage["prompt_tokens"])
+    if "completion_tokens" in usage:
+        out["output"] = int(usage["completion_tokens"])
+    if "total_tokens" in usage:
+        out["total"] = int(usage["total_tokens"])
+    return out or None
+
+
 class ChatTrace:
-    """Один trace на запрос чата (пользовательский, тестовый, Telegram, админ)."""
+    """Корневой span на один запрос чата; вложенные generation/span через OTEL-контекст."""
 
-    def __init__(
-        self,
-        *,
-        name: str,
-        session_id: str,
-        tenant_id: UUID | str | None = None,
-        chat_type: str = "chat",
-        metadata: dict | None = None,
-    ):
-        self.name = name
-        self.session_id = session_id
-        self.tenant_id = str(tenant_id) if tenant_id else None
-        self.chat_type = chat_type
-        self.metadata = metadata or {}
-        self._trace = None
+    def __init__(self, *, disabled: bool = False):
+        self._disabled = disabled
         self._llm_round = 0
-
-    def start(self) -> "ChatTrace":
-        client = get_client()
-        if not client:
-            return self
-        meta = {**self.metadata, "chat_type": self.chat_type}
-        if self.tenant_id:
-            meta["tenant_id"] = self.tenant_id
-        self._trace = client.trace(
-            name=self.name,
-            session_id=self.session_id,
-            user_id=self.tenant_id,
-            metadata=meta,
-        )
-        _chat_trace_ctx.set(self)
-        return self
-
-    def end(self) -> None:
-        client = get_client()
-        if client:
-            client.flush()
-        _chat_trace_ctx.set(None)
+        self._propagator = None
+        self._root_cm = None
 
     def log_llm(
         self,
@@ -110,23 +113,30 @@ class ChatTrace:
         usage: dict | None = None,
         latency_ms: float | None = None,
     ) -> None:
-        if not self._trace:
+        if self._disabled:
+            return
+        client = get_client()
+        if not client:
             return
         self._llm_round += 1
         gen_name = f"llm-round-{self._llm_round}" + ("-tools" if has_tools else "")
         meta: dict[str, Any] = {"has_tools": has_tools}
         if latency_ms is not None:
             meta["latency_ms"] = round(latency_ms, 2)
-        gen = self._trace.generation(
-            name=gen_name,
-            model=model,
-            input=_truncate({"messages": input_messages}),
-            metadata=meta,
-        )
-        end_kwargs: dict[str, Any] = {"output": _truncate(output)}
-        if usage:
-            end_kwargs["usage"] = usage
-        gen.end(**end_kwargs)
+        try:
+            with client.start_as_current_observation(
+                as_type="generation",
+                name=gen_name,
+                model=model,
+                metadata=meta,
+            ) as gen:
+                gen.update(
+                    input=_truncate({"messages": input_messages}),
+                    output=_truncate(output),
+                    usage_details=_usage_details(usage),
+                )
+        except Exception as e:
+            _log.warning("LangFuse log_llm failed: %s", e)
 
     def log_mcp(
         self,
@@ -138,24 +148,26 @@ class ChatTrace:
         output: Any = None,
         error: str | None = None,
     ) -> None:
-        if not self._trace:
+        if self._disabled:
+            return
+        client = get_client()
+        if not client:
             return
         span_name = f"mcp/{method}"
         if tool_name:
             span_name += f"/{tool_name}"
-        span = self._trace.span(
-            name=span_name,
-            input=_truncate(input_data),
-            metadata={
-                "base_url": base_url,
-                "method": method,
-                "tool": tool_name,
-            },
-        )
-        if error:
-            span.end(output=_truncate(error), level="ERROR")
-        else:
-            span.end(output=_truncate(output))
+        try:
+            with client.start_as_current_observation(
+                as_type="span",
+                name=span_name,
+                metadata={"base_url": base_url, "method": method, "tool": tool_name},
+            ) as span:
+                if error:
+                    span.update(input=_truncate(input_data), output=_truncate(error), level="ERROR")
+                else:
+                    span.update(input=_truncate(input_data), output=_truncate(output))
+        except Exception as e:
+            _log.warning("LangFuse log_mcp failed: %s", e)
 
 
 @asynccontextmanager
@@ -167,14 +179,50 @@ async def chat_trace_scope(
     chat_type: str = "chat",
     metadata: dict | None = None,
 ):
-    trace = ChatTrace(
-        name=name,
+    if not is_enabled():
+        yield ChatTrace(disabled=True)
+        return
+
+    client = get_client()
+    if not client:
+        yield ChatTrace(disabled=True)
+        return
+
+    from langfuse import propagate_attributes
+
+    meta = {**(metadata or {}), "chat_type": chat_type}
+    if tenant_id:
+        meta["tenant_id"] = str(tenant_id)
+    user_id = str(tenant_id) if tenant_id else None
+
+    trace = ChatTrace(disabled=False)
+    _chat_trace_ctx.set(trace)
+
+    propagator = propagate_attributes(
         session_id=session_id,
-        tenant_id=tenant_id,
-        chat_type=chat_type,
-        metadata=metadata,
-    ).start()
+        user_id=user_id,
+        metadata=meta,
+    )
+    root_cm = client.start_as_current_observation(
+        as_type="span",
+        name=name,
+        metadata=meta,
+    )
+    propagator.__enter__()
+    root_cm.__enter__()
     try:
         yield trace
     finally:
-        trace.end()
+        try:
+            root_cm.__exit__(None, None, None)
+        except Exception as e:
+            _log.warning("LangFuse root span close failed: %s", e)
+        try:
+            propagator.__exit__(None, None, None)
+        except Exception as e:
+            _log.warning("LangFuse propagate_attributes close failed: %s", e)
+        try:
+            client.flush()
+        except Exception as e:
+            _log.warning("LangFuse flush failed: %s", e)
+        _chat_trace_ctx.set(None)

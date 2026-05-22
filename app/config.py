@@ -59,8 +59,9 @@ class Settings(BaseSettings):
     # MCP-серверы по умолчанию для новых тенантов: JSON-массив пар [название, url], например [["RAG","http://rag:8020"],["Gallery","http://gallery:8010"]]
     default_mcp_servers: str = '[["RAG","http://rag:8020"],["Gallery","http://gallery:8010"]]'
 
-    # LangFuse (observability LLM + MCP)
+    # LangFuse (observability LLM + MCP). SDK v3: LANGFUSE_BASE_URL; langfuse_host — устаревший alias
     langfuse_enabled: bool = True
+    langfuse_base_url: str = ""
     langfuse_host: str = "http://localhost:3000"
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""

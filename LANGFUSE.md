@@ -101,6 +101,37 @@ LANGFUSE_ENABLED=false
 
 ## Устранение неполадок
 
-- **Traces не появляются** — проверьте `docker compose logs app` на ошибки LangFuse; убедитесь, что `langfuse-web` в состоянии running.  
-- **`app` не стартует из-за langfuse-web** — дождитесь готовности LangFuse или временно уберите `langfuse-web` из `depends_on` в `docker-compose.yml`.  
-- **Неверные ключи** — сверьте `.env` с UI → Project Settings → API Keys.
+### Traces не появляются
+
+1. **Пересоберите `app`** после обновления кода (нужен LangFuse Python SDK v3):
+   ```powershell
+   docker compose up -d --build app
+   ```
+2. **Проверьте переменные внутри контейнера** (не `localhost` для `app`):
+   ```powershell
+   docker compose exec app printenv LANGFUSE_BASE_URL LANGFUSE_PUBLIC_KEY LANGFUSE_ENABLED
+   ```
+   Ожидается: `LANGFUSE_BASE_URL=http://langfuse-web:3000`, ключи `pk-lf-...` / `sk-lf-...` из вашего `.env`.
+3. **Логи при старте:**
+   ```powershell
+   docker compose logs app | findstr LangFuse
+   ```
+   Должно быть: `LangFuse tracing enabled, base_url=http://langfuse-web:3000`.
+4. **Тот же проект в UI**, для которого выдали API keys (Settings → API Keys).
+5. **Раздел Tracing / Traces**, фильтр «Last hour».
+6. **Задержка 10–30 с** — LangFuse v3 пишет через worker; убедитесь, что `langfuse-worker` running:
+   ```powershell
+   docker compose ps langfuse-worker
+   ```
+7. **Тестовый чат** тоже шлёт traces (`user-chat`, `chat_type=testchat`).
+
+### Частые ошибки
+
+| Симптом | Причина |
+|--------|---------|
+| Traces пусто, ошибок нет | Старый SDK 2.x + server 3 — нужен `langfuse>=3` и пересборка образа |
+| `LangFuse tracing disabled` | Пустые ключи или `LANGFUSE_ENABLED=false` |
+| `flush failed` / connection | `LANGFUSE_BASE_URL=http://localhost:3000` внутри контейнера `app` — исправляет compose |
+| **Неверные ключи** | Ключи из другого проекта в UI |
+
+- **`app` не стартует из-за langfuse-web** — дождитесь Ready в `docker compose logs langfuse-web`.

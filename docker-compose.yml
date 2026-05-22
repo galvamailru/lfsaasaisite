@@ -13,10 +13,12 @@ services:
       - RAG_SERVICE_URL=http://rag:8020
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
+      # В контейнере только langfuse-web, не localhost из .env
+      - LANGFUSE_BASE_URL=http://langfuse-web:3000
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_ENABLED=${LANGFUSE_ENABLED:-true}
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-lfsaas-dev}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-lfsaas-dev}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
